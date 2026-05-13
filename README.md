@@ -1,73 +1,46 @@
-# React + TypeScript + Vite
+# FM AI Engineer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**FM AI Engineer** ist ein KI-gestütztes Tool zur Generierung von Yamaha DX7-kompatiblen Patches. Durch die Nutzung von Google Gemini werden musikalische Beschreibungen direkt in technisch präzise FM-Synthese-Parameter übersetzt.
 
-Currently, two official plugins are available:
+## Features
+- 🧠 **KI-Patch-Generation**: Erzeugt komplexe Sounds aus einfachen Text-Prompts.
+- 📉 **Visuelle Diagramme**: Zeigt DX7-Algorithmen und Operator-Hüllkurven (Envelopes) grafisch an.
+- 💾 **Sysex Bank Export**: Exportiert 32-Voice Cartridges (`.syx`), die direkt in **Dexed**, FM8 oder originale Hardware geladen werden können.
+- 🌊 **Synth-Wave UI**: Modernes, ästhetisches Dashboard im Bento-Box-Stil.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech Stack
+- **Frontend**: React, Vite, Tailwind CSS 4.
+- **Animationen**: Motion (ehemals Framer Motion).
+- **KI**: Google Gemini SDK (`gemini-flash-latest`).
+- **Icons**: Lucide React.
 
-## React Compiler
+## Installation & Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1.  Repository klonen:
+    ```bash
+    git clone https://github.com/kolkrabeofdoom/FM-AI-Engineer.git
+    cd FM-AI-Engineer
+    ```
+2.  Abhängigkeiten installieren:
+    ```bash
+    npm install
+    ```
+3.  Umgebungsvariablen konfigurieren:
+    Erstelle eine `.env.local` Datei und füge deinen Gemini API Key hinzu:
+    ```env
+    VITE_GEMINI_API_KEY=DEIN_API_KEY
+    ```
+4.  Development Server starten:
+    ```bash
+    npm run dev
+    ```
 
-## Expanding the ESLint configuration
+## DX7 Kompatibilität
+Das Tool exportiert Standard MIDI Sysex Files im 32-Voice Bank Format (Cartridge). Die generierten Sounds werden in Slot 1 abgelegt. Kompatibel mit:
+- Yamaha DX7 / DX7II / TX802 / TX81Z
+- Dexed (VST/Standalone)
+- FM8 (Native Instruments)
+- Korg Volca FM
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Lizenz
+MIT
