@@ -12,7 +12,7 @@ Egal ob du einen Synth-Bass aus einem Skrillex-Track nachbauen willst (Audio-to-
 
 Mit dem V2.0 Update ist das Projekt von einem simplen Text-Generator zu einem vollwertigen, multimodalen KI-Labor herangewachsen:
 
-- 🎵 **Audio-to-Patch (Reverse Engineering)**: Lade eine `.wav` oder `.mp3` Datei hoch. Die KI analysiert das Frequenzspektrum und die Hüllkurven und generiert einen DX7 Patch, der diesen Sound exakt nachahmt.
+- 🎵 **Audio-to-Patch (Reverse Engineering)**: Lade eine `.wav` oder `.mp3` Datei hoch. Die KI analysiert das Frequenzspektrum und die Hüllkurven und generiert einen DX7 Patch, der von diesem Sound inspiriert ist.
 - 🖼️ **Image-to-Patch (Synästhesie)**: Lade Bilder (`.jpg`, `.png`) hoch. Die App übersetzt Stimmung, Farben und Textur in ein passendes klangliches Gegenstück.
 - 👻 **Ghost in the Machine (Ambient Mode)**: Lass die KI für dich spielen! Dieser Modus feuert automatisch atmosphärische, arpeggierte Noten ab und mutiert den Synthesizer algorithmisch im Hintergrund weiter. Ein sich endlos verändernder, generativer Soundtrack.
 - 🧠 **AI Sound-Analyse ("Warum klingt das so?")**: Auf Knopfdruck analysiert Gemini deinen Sound und erklärt dir als Musiker die Funktion der Algorithmen und Hüllkurven.
