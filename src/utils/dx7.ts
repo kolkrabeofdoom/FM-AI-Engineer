@@ -17,6 +17,9 @@ export interface DX7Patch {
   algorithm: number; // 1-32
   feedback: number; // 0-7
   ops: OperatorParams[]; // OP6 to OP1
+  lfo_speed?: number;
+  lfo_pmd?: number;
+  lfo_amd?: number;
 }
 
 export function createDefaultPatch(): DX7Patch {
@@ -24,6 +27,9 @@ export function createDefaultPatch(): DX7Patch {
     name: "INIT VOICE",
     algorithm: 1,
     feedback: 0,
+    lfo_speed: 35,
+    lfo_pmd: 0,
+    lfo_amd: 0,
     ops: Array(6).fill(null).map(() => ({
       r1: 99, r2: 99, r3: 99, r4: 99,
       l1: 99, l2: 99, l3: 99, l4: 0,
@@ -49,8 +55,6 @@ function packVoice128(patch: DX7Patch): Uint8Array {
     data[offset + 0] = op.r1;
     data[offset + 1] = op.r2;
     data[offset + 2] = op.r3;
-    data[offset + 4] = op.r4; // Wait, R4 is often skipped or moved in some packed formats? 
-    // No, standard is R1, R2, R3, R4, L1, L2, L3, L4...
     data[offset + 3] = op.r4;
     data[offset + 4] = op.l1;
     data[offset + 5] = op.l2;
@@ -78,7 +82,11 @@ function packVoice128(patch: DX7Patch): Uint8Array {
   data[111] = (patch.feedback & 0x07) | 0x08; // Feedback + Key Sync
 
   // LFO
-  data[112] = 35; data[113] = 0; data[114] = 0; data[115] = 0; data[116] = 1;
+  data[112] = patch.lfo_speed ?? 35; 
+  data[113] = 0; // Delay
+  data[114] = patch.lfo_pmd ?? 0; 
+  data[115] = patch.lfo_amd ?? 0; 
+  data[116] = 1; // Sync
   data[117] = 0; // PMS
   data[118] = 24; // Transpose
 
@@ -127,4 +135,112 @@ export function createBankSysex(patch: DX7Patch): Uint8Array {
   sysex[4103] = 0xF7;
 
   return sysex;
+}
+
+export function createFullBankSysex(patches: (DX7Patch | null)[]): Uint8Array {
+  const sysex = new Uint8Array(4104);
+  sysex[0] = 0xF0;
+  sysex[1] = 0x43;
+  sysex[2] = 0x00;
+  sysex[3] = 0x09;
+  sysex[4] = 0x20;
+  sysex[5] = 0x00;
+
+  const bankData = new Uint8Array(4096);
+  const initVoice = packVoice128(createDefaultPatch());
+
+  for (let i = 0; i < 32; i++) {
+    if (i < patches.length && patches[i] !== null) {
+      const voice = packVoice128(patches[i]!);
+      bankData.set(voice, i * 128);
+    } else {
+      bankData.set(initVoice, i * 128);
+    }
+  }
+
+  sysex.set(bankData, 6);
+
+  let sum = 0;
+  for (let i = 0; i < 4096; i++) {
+    sum += bankData[i];
+  }
+  sysex[4102] = (128 - (sum & 127)) & 127;
+  sysex[4103] = 0xF7;
+
+  return sysex;
+}
+
+function parseVoice128(data: Uint8Array): DX7Patch {
+  const patch = createDefaultPatch();
+  for (let i = 0; i < 6; i++) {
+    const offset = i * 17;
+    const op = patch.ops[i];
+    op.r1 = data[offset + 0];
+    op.r2 = data[offset + 1];
+    op.r3 = data[offset + 2];
+    op.r4 = data[offset + 3];
+    op.l1 = data[offset + 4];
+    op.l2 = data[offset + 5];
+    op.l3 = data[offset + 6];
+    op.l4 = data[offset + 7];
+    op.detune = (data[offset + 12] >> 3) & 0x0F;
+    op.out = data[offset + 14];
+    op.f_coarse = (data[offset + 15] >> 1) & 0x3F;
+    op.f_fine = data[offset + 16];
+  }
+  patch.algorithm = (data[110] & 0x1F) + 1;
+  patch.feedback = data[111] & 0x07;
+  patch.lfo_speed = data[112];
+  patch.lfo_pmd = data[114];
+  patch.lfo_amd = data[115];
+  let name = "";
+  for (let i = 0; i < 10; i++) {
+    const charCode = data[118 + i];
+    if (charCode >= 32 && charCode <= 126) name += String.fromCharCode(charCode);
+  }
+  patch.name = name.trim();
+  return patch;
+}
+
+function parseVoice155(data: Uint8Array): DX7Patch {
+  const patch = createDefaultPatch();
+  for (let i = 0; i < 6; i++) {
+    const offset = i * 21;
+    const op = patch.ops[i];
+    op.r1 = data[offset + 0];
+    op.r2 = data[offset + 1];
+    op.r3 = data[offset + 2];
+    op.r4 = data[offset + 3];
+    op.l1 = data[offset + 4];
+    op.l2 = data[offset + 5];
+    op.l3 = data[offset + 6];
+    op.l4 = data[offset + 7];
+    op.detune = data[offset + 13];
+    op.out = data[offset + 18];
+    op.f_coarse = data[offset + 19];
+    op.f_fine = data[offset + 20];
+  }
+  patch.algorithm = data[134] + 1;
+  patch.feedback = data[135] & 0x07;
+  patch.lfo_speed = data[137];
+  patch.lfo_pmd = data[139];
+  patch.lfo_amd = data[140];
+  let name = "";
+  for (let i = 0; i < 10; i++) {
+    const charCode = data[145 + i];
+    if (charCode >= 32 && charCode <= 126) name += String.fromCharCode(charCode);
+  }
+  patch.name = name.trim();
+  return patch;
+}
+
+export function parseSysex(buffer: ArrayBuffer): DX7Patch {
+  const bytes = new Uint8Array(buffer);
+  if (bytes.length === 4104 && bytes[0] === 0xF0 && bytes[1] === 0x43) {
+    return parseVoice128(bytes.slice(6, 6 + 128));
+  }
+  if (bytes.length === 163 && bytes[0] === 0xF0 && bytes[1] === 0x43) {
+    return parseVoice155(bytes.slice(6, 6 + 155));
+  }
+  throw new Error("Ungültiges DX7 Sysex Format oder falsche Dateigröße. Bitte wähle eine 32-Voice Bank (4104 Bytes) oder ein 1-Voice Dump (163 Bytes).");
 }

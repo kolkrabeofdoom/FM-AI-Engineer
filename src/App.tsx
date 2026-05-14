@@ -1,29 +1,64 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Download, Music, Settings, Cpu, Layers, Info, HelpCircle, X } from 'lucide-react';
+import { Sparkles, Download, Music, Settings, Cpu, Layers, Info, HelpCircle, X, Dna, Upload, BookOpen, HardDrive, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { createDefaultPatch, createBankSysex } from './utils/dx7';
+import { createDefaultPatch, createBankSysex, parseSysex } from './utils/dx7';
 import type { DX7Patch } from './utils/dx7';
 import { cn } from './lib/utils';
 import { AlgorithmDiagram } from './components/AlgorithmDiagram';
 import { EnvelopeDiagram } from './components/EnvelopeDiagram';
+import { VirtualKeyboard } from './components/VirtualKeyboard';
+import { Documentation } from './components/Documentation';
+import { Cartridge } from './components/Cartridge';
+import { savePatchToCartridge } from './lib/storage';
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
 const HELP_TEXTS: Record<string, { title: string; desc: string }> = {
   brightness: {
     title: "Helligkeit (Brightness)",
-    desc: "Dieser Regler skaliert das Output-Level (Out) aller Operatoren. In der FM-Synthese steuern die Modulator-Level die Intensität der Obertöne. Ein höherer Wert führt zu einem helleren, metallischeren Klang, während niedrigere Werte den Sound weicher und dumpfer machen."
+    desc: "Dieser Regler skaliert das Output-Level (Out) aller Operatoren. In der FM-Synthese steuern die Modulator-Level die Intensität der Obertöne. Ein höherer Wert führt zu einem helleren, metallischeren Klang."
   },
   attack: {
     title: "Attack-Zeit",
-    desc: "Steuert die Einschwingzeit (Rate 1) aller Operatoren. Ein positiver Wert verlängert die Attack-Phase (der Sound baut sich langsamer auf, gut für Pads). Ein negativer Wert beschleunigt die Attack-Phase (der Sound ist sofort da, ideal für Bässe und Plucks)."
+    desc: "Steuert die Einschwingzeit (Rate 1) aller Operatoren. Ein positiver Wert verlängert die Attack-Phase (langsam), ein negativer Wert beschleunigt sie (perkussiv)."
   },
   release: {
     title: "Release-Zeit",
-    desc: "Steuert die Ausklingzeit (Rate 4) aller Operatoren, nachdem die Taste losgelassen wurde. Ein positiver Wert sorgt für einen längeren Ausklang (ähnlich einem Hall-Effekt), während ein negativer Wert den Sound beim Loslassen abrupt abschneidet."
+    desc: "Steuert die Ausklingzeit (Rate 4) aller Operatoren, nachdem die Taste losgelassen wurde. Positiv = längerer Ausklang."
+  },
+  vibrato: {
+    title: "Vibrato (LFO)",
+    desc: "Erhöht die Pitch-Modulation (PMD) und die LFO-Geschwindigkeit. Bringt Bewegung und Wackeln in statische Sounds."
+  },
+  feedback: {
+    title: "Feedback (Intensität)",
+    desc: "Erhöht oder verringert das Feedback des selbstmodulierenden Operators. Höhere Werte klingen rauer und rauschender."
+  },
+  detune: {
+    title: "Fatness (Detune)",
+    desc: "Verstimmt die Operatoren leicht gegeneinander. Sorgt für Schwebungen und den typischen analogen, breiten 80s-Chorus-Effekt."
+  },
+  decay: {
+    title: "Decay (Pluckiness)",
+    desc: "Verändert Rate 2 und Rate 3. Macht aus endlos anhaltenden Flächensounds kurze, gezupfte (perkussive) Sounds."
+  },
+  harmonics: {
+    title: "Harmonics (Inharmonicity)",
+    desc: "Verschiebt die Frequenz (f_coarse) der Modulatoren. Ungerade Verschiebungen erzeugen unmusikalische, glockige oder schräge Klangfarben."
   }
 };
+
+const MUTATIONS = [
+  { id: '80s', icon: '🪩', label: 'Mehr 80s-Feeling', prompt: 'Mache den Sound breiter, mit mehr Chorus-Charakter und klassischem 80er Jahre FM-Vibe.' },
+  { id: 'harder', icon: '🔨', label: 'Perkussiver & Härter', prompt: 'Mache den Attack knackiger, füge mehr FM-Punch hinzu, ideal für Bässe oder Plucks.' },
+  { id: 'pad', icon: '☁️', label: 'Weicher & Pad-artiger', prompt: 'Verlängere Attack und Release, reduziere hartes Feedback und mache den Sound wärmer und fließender.' },
+  { id: 'glass', icon: '🧊', label: 'Metallischer & Gläserner', prompt: 'Erhöhe die Carrier/Modulator Frequenzen leicht, füge mehr glockige und gläserne Obertöne hinzu.' },
+  { id: 'lofi', icon: '👾', label: 'Lo-Fi & Vintage', prompt: 'Füge leichtes Detuning hinzu, erhöhe das Noise/Feedback leicht für einen analogen und instabilen Charakter.' },
+  { id: 'dirty', icon: '🎸', label: 'Dreckiger & Aggressiver', prompt: 'Erhöhe das Feedback stark, nutze starkes Detuning und schneidende Obertöne für einen aggressiven Sound.' },
+  { id: 'sub', icon: '🌌', label: 'Tiefer & Sub-bassiger', prompt: 'Oktaviere die Carrier nach unten (f_coarse anpassen), fokussiere auf den Grundton für tiefe Bässe.' },
+  { id: 'random', icon: '🎲', label: 'Zufällige Mutation', prompt: 'Überrasch mich! Verändere den Charakter subtil aber hörbar in eine zufällige Richtung.' }
+];
 
 const SYSTEM_PROMPT = `You are a Yamaha DX7 FM Synthesis Engineer.
 Your goal is to create a DX7 patch based on a text prompt.
@@ -59,19 +94,64 @@ export default function App() {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [originalPatch, setOriginalPatch] = useState<DX7Patch | null>(null);
-  const [macros, setMacros] = useState({ brightness: 0, attack: 0, release: 0 });
+  const [macros, setMacros] = useState({ 
+    brightness: 0, attack: 0, release: 0,
+    vibrato: 0, feedback: 0, detune: 0, decay: 0, harmonics: 0
+  });
   const [activeHelp, setActiveHelp] = useState<string | null>(null);
+  const [mutatingId, setMutatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'synth' | 'docs' | 'cartridge'>('synth');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      const buffer = await file.arrayBuffer();
+      const importedPatch = parseSysex(buffer);
+      setOriginalPatch(importedPatch);
+      setMacros({ brightness: 0, attack: 0, release: 0, vibrato: 0, feedback: 0, detune: 0, decay: 0, harmonics: 0 });
+      setPrompt(`Imported Patch: ${importedPatch.name}`);
+      setError(null);
+    } catch (err: any) {
+      console.error(err);
+      setError(`Import Error: ${err.message || "Failed to parse Sysex file."}`);
+    }
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const patch = useMemo(() => {
     if (!originalPatch) return null;
+    const lfo_speed = Math.max(0, Math.min(99, (originalPatch.lfo_speed ?? 35) + macros.vibrato * 2));
+    const lfo_pmd = Math.max(0, Math.min(99, (originalPatch.lfo_pmd ?? 0) + macros.vibrato));
+    const feedback = Math.max(0, Math.min(7, originalPatch.feedback + Math.floor(macros.feedback / 10)));
+
     return {
       ...originalPatch,
-      ops: originalPatch.ops.map(op => {
+      feedback,
+      lfo_speed,
+      lfo_pmd,
+      ops: originalPatch.ops.map((op, i) => {
         const out = Math.max(0, Math.min(99, op.out + macros.brightness));
         const r1 = Math.max(0, Math.min(99, op.r1 - macros.attack));
         const r4 = Math.max(0, Math.min(99, op.r4 - macros.release));
-        return { ...op, out, r1, r4 };
+        const r2 = Math.max(0, Math.min(99, op.r2 + macros.decay));
+        const r3 = Math.max(0, Math.min(99, op.r3 + macros.decay));
+        const detune = Math.max(0, Math.min(14, op.detune + Math.floor(macros.detune / 4)));
+        
+        let f_coarse = op.f_coarse;
+        if (i < 5 && macros.harmonics !== 0) {
+           f_coarse = Math.max(0, Math.min(31, op.f_coarse + Math.floor(macros.harmonics / 10)));
+        }
+
+        return { ...op, out, r1, r2, r3, r4, detune, f_coarse };
       })
     };
   }, [originalPatch, macros]);
@@ -106,12 +186,57 @@ export default function App() {
       };
 
       setOriginalPatch(newPatch);
-      setMacros({ brightness: 0, attack: 0, release: 0 });
+      setMacros({ brightness: 0, attack: 0, release: 0, vibrato: 0, feedback: 0, detune: 0, decay: 0, harmonics: 0 });
+      setAnalysisResult(null); // Reset analysis on new patch
     } catch (err: any) {
       console.error(err);
       setError(`Error: ${err.message || "Failed to generate patch."}`);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const mutatePatch = async (mutationId: string, mutationPrompt: string) => {
+    if (!originalPatch) return;
+    setMutatingId(mutationId);
+    setError(null);
+
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      
+      const MUTATION_SYSTEM_PROMPT = `You are a Yamaha DX7 FM Synthesis Engineer.
+You are given an existing DX7 patch JSON. Your task is to apply a specific mutation requested by the user, while keeping the general character intact.
+Output ONLY the modified JSON object. Do not include markdown or explanations.
+Existing Patch:
+${JSON.stringify(originalPatch, null, 2)}`;
+
+      const result = await model.generateContent([
+        { text: MUTATION_SYSTEM_PROMPT },
+        { text: `Mutation instruction: ${mutationPrompt}` }
+      ]);
+      
+      const text = result.response.text();
+      const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
+      const data = JSON.parse(cleaned);
+
+      const defaultPatch = createDefaultPatch();
+      const newPatch: DX7Patch = {
+        ...defaultPatch,
+        ...data,
+        ops: data.ops.map((op: any, i: number) => ({
+          ...defaultPatch.ops[i],
+          ...op
+        }))
+      };
+
+      setOriginalPatch(newPatch);
+      setMacros({ brightness: 0, attack: 0, release: 0, vibrato: 0, feedback: 0, detune: 0, decay: 0, harmonics: 0 }); // Reset macros after mutation
+      setAnalysisResult(null);
+    } catch (err: any) {
+      console.error(err);
+      setError(`Mutation Error: ${err.message || "Failed to mutate patch."}`);
+    } finally {
+      setMutatingId(null);
     }
   };
 
@@ -150,9 +275,70 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
+  const analyzePatch = async () => {
+    if (!originalPatch) return;
+    setIsAnalyzing(true);
+    setError(null);
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      const promptText = `Du bist ein DX7 Experte. Analysiere diesen DX7 Patch und erkläre kurz und prägnant auf Deutsch, warum er so klingt, wie er klingt. Fokussiere dich auf den gewählten Algorithmus, das Feedback und auffällige Frequenzen/Hüllkurven. Erkläre es so, dass es ein Musiker versteht. Halte dich extrem kurz (max. 4-5 Sätze).\n\nPatch: ${JSON.stringify(originalPatch, null, 2)}`;
+      
+      const result = await model.generateContent([{ text: promptText }]);
+      setAnalysisResult(result.response.text());
+    } catch (err: any) {
+      console.error(err);
+      setError(`Analyse Error: ${err.message}`);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const breedAI = async (patchA: DX7Patch, patchB: DX7Patch) => {
+    setIsGenerating(true);
+    setError(null);
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      const promptText = `Du bist ein Yamaha DX7 Experte. Der User möchte zwei Patches "kreuzen" (Breeding).
+Patch A:
+${JSON.stringify(patchA, null, 2)}
+
+Patch B:
+${JSON.stringify(patchB, null, 2)}
+
+Kombiniere die besten Eigenschaften beider Patches zu einem neuen, genialen Sound. Nutze das exakte JSON-Format. Output ONLY das fertige JSON, keine Erklärungen.`;
+      
+      const result = await model.generateContent([{ text: promptText }]);
+      const text = result.response.text();
+      const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
+      const data = JSON.parse(cleaned);
+
+      const defaultPatch = createDefaultPatch();
+      const newPatch: DX7Patch = {
+        ...defaultPatch,
+        ...data,
+        name: data.name ? data.name.substring(0, 10).toUpperCase() : "AI_HYBRID",
+        ops: data.ops.map((op: any, i: number) => ({
+          ...defaultPatch.ops[i],
+          ...op
+        }))
+      };
+
+      setOriginalPatch(newPatch);
+      setMacros({ brightness: 0, attack: 0, release: 0, vibrato: 0, feedback: 0, detune: 0, decay: 0, harmonics: 0 });
+      setAnalysisResult(null);
+      setPrompt(`Bred from ${patchA.name} and ${patchB.name}`);
+      setActiveTab('synth');
+    } catch (err: any) {
+      console.error(err);
+      setError(`Breeding Error: ${err.message || "Failed to breed patches."}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-dx7-bg text-slate-100 font-sans p-6 md:p-12 selection:bg-dx7-teal/30">
-      <header className="max-w-6xl mx-auto mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <header className="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-2 border-slate-800 pb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-dx7-teal rounded-sm border-2 border-dx7-panel flex items-center justify-center shadow-lg shadow-dx7-teal/20">
@@ -163,12 +349,55 @@ export default function App() {
           <p className="text-slate-400 font-mono-tech tracking-tight">The ultimate Yamaha DX7 Patch Designer</p>
         </div>
         
-        <div className="flex gap-4 p-1">
-          <div className="px-4 py-2 bg-dx7-magenta rounded-sm border-2 border-[#cc0066] text-[10px] font-mono-tech uppercase tracking-widest text-white font-bold">v1.2.0 Stable</div>
+        <div className="flex flex-col items-end gap-4">
+          <div className="px-4 py-1 bg-dx7-magenta rounded-sm border-2 border-[#cc0066] text-[10px] font-mono-tech uppercase tracking-widest text-white font-bold">v1.2.0 Stable</div>
+          
+          <div className="flex gap-2 bg-slate-900 p-1 rounded-md border border-slate-800">
+            <button 
+              onClick={() => setActiveTab('synth')}
+              className={cn(
+                "px-4 py-2 rounded-sm text-xs font-mono-tech uppercase tracking-widest flex items-center gap-2 transition-all",
+                activeTab === 'synth' ? "bg-dx7-panel text-dx7-teal shadow-md" : "text-slate-500 hover:text-slate-300"
+              )}
+            >
+              <Settings size={14} /> Generator
+            </button>
+            <button 
+              onClick={() => setActiveTab('cartridge')}
+              className={cn(
+                "px-4 py-2 rounded-sm text-xs font-mono-tech uppercase tracking-widest flex items-center gap-2 transition-all",
+                activeTab === 'cartridge' ? "bg-dx7-panel text-dx7-teal shadow-md" : "text-slate-500 hover:text-slate-300"
+              )}
+            >
+              <HardDrive size={14} /> Cartridge
+            </button>
+            <button 
+              onClick={() => setActiveTab('docs')}
+              className={cn(
+                "px-4 py-2 rounded-sm text-xs font-mono-tech uppercase tracking-widest flex items-center gap-2 transition-all",
+                activeTab === 'docs' ? "bg-dx7-panel text-dx7-teal shadow-md" : "text-slate-500 hover:text-slate-300"
+              )}
+            >
+              <BookOpen size={14} /> Handbuch
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {activeTab === 'docs' ? (
+        <Documentation />
+      ) : activeTab === 'cartridge' ? (
+        <Cartridge 
+          onLoadPatch={(p) => {
+            setOriginalPatch(p);
+            setMacros({ brightness: 0, attack: 0, release: 0, vibrato: 0, feedback: 0, detune: 0, decay: 0, harmonics: 0 });
+            setPrompt(`Loaded from Cartridge: ${p.name}`);
+            setActiveTab('synth');
+          }} 
+          onBreedAI={breedAI}
+        />
+      ) : (
+        <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Input Section */}
         <section className="lg:col-span-5 space-y-6">
           <div className="bg-dx7-panel border-b-4 border-[#151310] p-8 rounded-md shadow-2xl relative overflow-hidden group">
@@ -187,27 +416,44 @@ export default function App() {
               className="w-full h-40 bg-dx7-bg border-2 border-slate-800 rounded-sm p-6 text-lg font-mono-tech text-dx7-teal focus:outline-none focus:border-dx7-teal/50 transition-all resize-none placeholder:text-slate-600"
             />
             
-            <button
-              onClick={generatePatch}
-              disabled={isGenerating || !prompt}
-              className={cn(
-                "w-full mt-6 py-4 rounded-sm font-mono-tech font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-all transform active:translate-y-1 border-b-4",
-                isGenerating || !prompt 
-                  ? "bg-slate-800 text-slate-500 border-slate-900 cursor-not-allowed" 
-                  : "bg-dx7-teal text-dx7-bg border-[#008888] shadow-xl shadow-dx7-teal/20 hover:brightness-110"
-              )}
-            >
-              {isGenerating ? (
-                <>
-                  <div className="w-5 h-5 border-3 border-dx7-bg/20 border-t-dx7-bg rounded-full animate-spin" />
-                  Konstruiere Wellenformen...
-                </>
-              ) : (
-                <>
-                  <Settings size={20} /> Patch Generieren
-                </>
-              )}
-            </button>
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={generatePatch}
+                disabled={isGenerating || !prompt}
+                className={cn(
+                  "flex-1 py-4 rounded-sm font-mono-tech font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-all transform active:translate-y-1 border-b-4",
+                  isGenerating || !prompt 
+                    ? "bg-slate-800 text-slate-500 border-slate-900 cursor-not-allowed" 
+                    : "bg-dx7-teal text-dx7-bg border-[#008888] shadow-xl shadow-dx7-teal/20 hover:brightness-110"
+                )}
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="w-5 h-5 border-3 border-dx7-bg/20 border-t-dx7-bg rounded-full animate-spin" />
+                    Konstruiere...
+                  </>
+                ) : (
+                  <>
+                    <Settings size={20} /> Generieren
+                  </>
+                )}
+              </button>
+              
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-6 py-4 rounded-sm font-mono-tech font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-all transform active:translate-y-1 border-b-4 bg-slate-800 text-dx7-teal border-slate-900 hover:bg-slate-700 shadow-xl shadow-slate-900/50"
+                title="Importiere eine .syx Datei"
+              >
+                <Upload size={20} /> Import
+              </button>
+              <input 
+                type="file" 
+                accept=".syx" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                className="hidden" 
+              />
+            </div>
             
             {error && <p className="mt-4 text-dx7-magenta text-xs font-bold text-center font-mono-tech">{error}</p>}
           </div>
@@ -224,6 +470,69 @@ export default function App() {
               </div>
             </div>
           </div>
+
+          {/* Evolution Panel (Left Column) */}
+          <AnimatePresence>
+            {originalPatch && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="bg-dx7-panel border-b-4 border-[#151310] rounded-md p-6 shadow-xl relative overflow-hidden"
+              >
+                <h3 className="text-[10px] font-mono-tech uppercase tracking-widest text-dx7-magenta mb-4 flex items-center gap-2">
+                  <Dna size={14} /> Sound-Evolution (Mutate)
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {MUTATIONS.map(mut => (
+                    <button
+                      key={mut.id}
+                      onClick={() => mutatePatch(mut.id, mut.prompt)}
+                      disabled={mutatingId !== null || isGenerating}
+                      className={cn(
+                        "px-4 py-2 text-[10px] sm:text-xs font-mono-tech uppercase tracking-wide rounded-sm border-2 transition-all flex items-center gap-2",
+                        mutatingId === mut.id 
+                          ? "bg-dx7-magenta text-white border-[#cc0066] shadow-[0_0_15px_rgba(204,0,102,0.5)]" 
+                          : "bg-dx7-bg text-slate-300 border-slate-700 hover:border-dx7-magenta hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      )}
+                    >
+                      {mutatingId === mut.id ? (
+                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <span>{mut.icon}</span>
+                      )}
+                      {mut.label}
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="mt-6 pt-6 border-t-2 border-slate-800">
+                  <button
+                    onClick={analyzePatch}
+                    disabled={isAnalyzing || isGenerating || mutatingId !== null}
+                    className="w-full py-3 bg-slate-900 border-2 border-slate-800 text-dx7-teal font-mono-tech uppercase tracking-widest text-[10px] rounded-sm hover:border-dx7-teal/50 hover:bg-slate-800 transition-all flex justify-center items-center gap-2 disabled:opacity-50"
+                  >
+                    {isAnalyzing ? <div className="w-3 h-3 border-2 border-dx7-teal/30 border-t-dx7-teal rounded-full animate-spin" /> : <Search size={14} />}
+                    {isAnalyzing ? "Analysiere Sound-DNA..." : "Warum klingt das so? (Analyse)"}
+                  </button>
+                  
+                  {analysisResult && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-4 p-4 bg-dx7-teal/10 border border-dx7-teal/20 rounded-sm"
+                    >
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-dx7-teal mb-2 flex items-center gap-2">
+                        <Search size={12} /> KI-Analyse
+                      </h4>
+                      <p className="text-xs font-sans text-dx7-teal/80 leading-relaxed italic">
+                        "{analysisResult}"
+                      </p>
+                    </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </section>
 
         {/* Result Section */}
@@ -246,69 +555,90 @@ export default function App() {
                         {patch.name || "INIT VOICE"}
                       </div>
                     </div>
-                    <button 
-                      onClick={downloadSysex}
-                      className="p-4 bg-dx7-magenta text-white border-b-4 border-[#cc0066] rounded-sm hover:brightness-110 transition-all active:translate-y-1 active:border-b-0 group"
-                    >
-                      <Download size={24} className="group-hover:animate-pulse" />
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => {
+                          try {
+                            savePatchToCartridge(patch);
+                            alert(`Patch '${patch.name}' wurde erfolgreich in die Cartridge gespeichert!`);
+                          } catch (e: any) {
+                            alert(e.message);
+                          }
+                        }}
+                        className="p-4 bg-[#2A231F] text-[#D4AF37] border-b-4 border-[#1A1512] rounded-sm hover:brightness-110 transition-all active:translate-y-1 active:border-b-0 group"
+                        title="In RAM Cartridge speichern"
+                      >
+                        <HardDrive size={24} className="group-hover:text-white transition-colors" />
+                      </button>
+                      <button 
+                        onClick={downloadSysex}
+                        className="p-4 bg-dx7-magenta text-white border-b-4 border-[#cc0066] rounded-sm hover:brightness-110 transition-all active:translate-y-1 active:border-b-0 group"
+                        title="Als einzelne .syx Datei herunterladen"
+                      >
+                        <Download size={24} className="group-hover:animate-pulse" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Tweaking Panel */}
-                  <div className="bg-dx7-bg border-2 border-slate-800 p-6 rounded-sm mb-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="flex flex-col gap-3">
-                      <div className="flex justify-between items-center text-[10px] font-mono-tech uppercase tracking-widest text-slate-400">
-                        <div className="flex items-center gap-2">
-                          <span>Helligkeit</span>
-                          <button onClick={() => setActiveHelp('brightness')} className="hover:text-dx7-teal transition-colors" title="Info zu Helligkeit"><HelpCircle size={12} /></button>
+                  <div className="bg-dx7-bg border-2 border-slate-800 p-6 rounded-sm mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+                    {[
+                      { id: 'brightness', label: 'Helligkeit', icon: '☀️' },
+                      { id: 'attack', label: 'Attack', icon: '📈' },
+                      { id: 'decay', label: 'Decay', icon: '📉' },
+                      { id: 'release', label: 'Release', icon: '🌊' },
+                      { id: 'feedback', label: 'Feedback', icon: '⚡' },
+                      { id: 'detune', label: 'Fatness', icon: '🎸' },
+                      { id: 'vibrato', label: 'Vibrato', icon: '〰️' },
+                      { id: 'harmonics', label: 'Harmonics', icon: '🔔' },
+                    ].map(macro => (
+                      <div key={macro.id} className="flex flex-col gap-3">
+                        <div className="flex justify-between items-center h-4 text-[10px] font-mono-tech uppercase tracking-widest text-slate-400">
+                          <div className="flex items-center gap-2">
+                            <span>{macro.icon} {macro.label}</span>
+                            <button onClick={() => setActiveHelp(macro.id)} className="hover:text-dx7-teal transition-colors" title={`Info zu ${macro.label}`}><HelpCircle size={12} /></button>
+                          </div>
+                          <span className={cn(
+                            "w-8 text-right shrink-0",
+                            (macros as any)[macro.id] > 0 ? "text-dx7-teal" : (macros as any)[macro.id] < 0 ? "text-dx7-magenta" : ""
+                          )}>
+                            {(macros as any)[macro.id] > 0 ? `+${(macros as any)[macro.id]}` : (macros as any)[macro.id]}
+                          </span>
                         </div>
-                        <span className={macros.brightness > 0 ? "text-dx7-teal" : macros.brightness < 0 ? "text-dx7-magenta" : ""}>
-                          {macros.brightness > 0 ? `+${macros.brightness}` : macros.brightness}
-                        </span>
+                        <input 
+                          type="range" min="-50" max="50" value={(macros as any)[macro.id]}
+                          onChange={e => setMacros(m => ({...m, [macro.id]: parseInt(e.target.value)}))}
+                          className="w-full accent-[#00ffff] h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                        />
                       </div>
-                      <input 
-                        type="range" min="-50" max="50" value={macros.brightness}
-                        onChange={e => setMacros(m => ({...m, brightness: parseInt(e.target.value)}))}
-                        className="w-full accent-[#00ffff] h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-3">
-                      <div className="flex justify-between items-center text-[10px] font-mono-tech uppercase tracking-widest text-slate-400">
-                        <div className="flex items-center gap-2">
-                          <span>Attack (Zeit)</span>
-                          <button onClick={() => setActiveHelp('attack')} className="hover:text-dx7-teal transition-colors" title="Info zu Attack"><HelpCircle size={12} /></button>
-                        </div>
-                        <span className={macros.attack > 0 ? "text-dx7-teal" : macros.attack < 0 ? "text-dx7-magenta" : ""}>
-                          {macros.attack > 0 ? `+${macros.attack}` : macros.attack}
-                        </span>
-                      </div>
-                      <input 
-                        type="range" min="-50" max="50" value={macros.attack}
-                        onChange={e => setMacros(m => ({...m, attack: parseInt(e.target.value)}))}
-                        className="w-full accent-[#00ffff] h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-3">
-                      <div className="flex justify-between items-center text-[10px] font-mono-tech uppercase tracking-widest text-slate-400">
-                        <div className="flex items-center gap-2">
-                          <span>Release (Zeit)</span>
-                          <button onClick={() => setActiveHelp('release')} className="hover:text-dx7-teal transition-colors" title="Info zu Release"><HelpCircle size={12} /></button>
-                        </div>
-                        <span className={macros.release > 0 ? "text-dx7-teal" : macros.release < 0 ? "text-dx7-magenta" : ""}>
-                          {macros.release > 0 ? `+${macros.release}` : macros.release}
-                        </span>
-                      </div>
-                      <input 
-                        type="range" min="-50" max="50" value={macros.release}
-                        onChange={e => setMacros(m => ({...m, release: parseInt(e.target.value)}))}
-                        className="w-full accent-[#00ffff] h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
+                    ))}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
                     <div className="md:col-span-5">
-                      <AlgorithmDiagram algorithm={patch.algorithm} />
+                      <div className="bg-[#151310] border border-slate-800 rounded-sm overflow-hidden flex flex-col h-full">
+                        <div className="bg-slate-900 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                           <span className="text-[10px] font-mono-tech uppercase tracking-widest text-slate-500">Algorithm</span>
+                           <div className="flex items-center gap-3">
+                             <button 
+                               onClick={() => setOriginalPatch(p => p ? {...p, algorithm: p.algorithm > 1 ? p.algorithm - 1 : 32} : null)}
+                               className="text-dx7-teal hover:text-white transition-colors p-1 bg-slate-800 rounded"
+                             >
+                               <ChevronLeft size={14} />
+                             </button>
+                             <span className="font-lcd text-dx7-lcd-red text-xl w-6 text-center">{patch.algorithm}</span>
+                             <button 
+                               onClick={() => setOriginalPatch(p => p ? {...p, algorithm: p.algorithm < 32 ? p.algorithm + 1 : 1} : null)}
+                               className="text-dx7-teal hover:text-white transition-colors p-1 bg-slate-800 rounded"
+                             >
+                               <ChevronRight size={14} />
+                             </button>
+                           </div>
+                        </div>
+                        <div className="flex-1 p-4">
+                          <AlgorithmDiagram algorithm={patch.algorithm} />
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="md:col-span-7 grid grid-cols-2 gap-4">
@@ -348,18 +678,20 @@ export default function App() {
                           color={i >= 3 ? "#ff0088" : "#00b4b4"} 
                         />
                         
-                        <div className="mt-3 flex justify-between items-center font-mono-tech">
-                          <div className="flex gap-2 items-center">
-                            <span className="text-[10px] text-slate-500 uppercase">Freq</span>
-                            <span className="text-[12px] font-lcd text-dx7-lcd-red">{op.f_coarse}.{op.f_fine}</span>
+                        <div className="mt-3 flex justify-between items-center font-mono-tech h-4">
+                          <div className="flex gap-2 items-center truncate">
+                            <span className="text-[10px] text-slate-500 uppercase shrink-0">Freq</span>
+                            <span className="text-[12px] font-lcd text-dx7-lcd-red truncate">{op.f_coarse}.{op.f_fine}</span>
                           </div>
-                          <div className="text-[10px] text-dx7-teal/70 uppercase">
+                          <div className="text-[10px] text-dx7-teal/70 uppercase shrink-0">
                              {op.f_coarse === 0 ? "FIXED" : "RATIO"}
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
+                  
+                  <VirtualKeyboard patch={patch} />
                 </div>
                 
                 <p className="text-center text-[10px] text-slate-600 font-black uppercase tracking-widest">
@@ -380,6 +712,7 @@ export default function App() {
           </AnimatePresence>
         </section>
       </main>
+      )}
 
       {/* Help Overlay */}
       <AnimatePresence>

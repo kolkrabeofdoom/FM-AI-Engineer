@@ -1,23 +1,27 @@
-# FM AI Engineer
+# FM AI Engineer (Studio Edition)
 
-**FM AI Engineer** ist ein KI-gestütztes Tool zur Generierung von Yamaha DX7-kompatiblen Patches. Durch die Nutzung von KI-Modellen werden musikalische Text-Beschreibungen (z.B. "ein warmer, kristallklarer E-Piano Sound aus den 80ern") direkt in technisch präzise FM-Synthese-Parameter übersetzt.
+**FM AI Engineer** ist ein hochmodernes, KI-gestütztes Sounddesign-Tool für die legendäre Yamaha DX7 Architektur. Durch die Nutzung von Google Gemini werden musikalische Text-Beschreibungen (z.B. "ein warmer, kristallklarer E-Piano Sound aus den 80ern") direkt in präzise FM-Synthese-Parameter übersetzt.
 
-Die Benutzeroberfläche wurde kürzlich komplett überarbeitet und bietet nun eine authentische Retro-Ästhetik, die vom ikonischen Design des originalen Yamaha DX7 Synthesizers inspiriert ist – inklusive authentischer Farbpalette (DX7 Teal und Magenta), Membran-Tasten und digitaler LCD-Anzeigen!
+Mit der neuesten Version hat sich das Tool von einem einfachen Generator zu einer voll ausgestatteten **Studio-Workstation** entwickelt – komplett mit RAM-Cartridge, MIDI-Integration und intelligenten Sound-Breeding-Fähigkeiten im authentischen Retro-Design.
 
-## Features
-- 🧠 **KI-Patch-Generation**: Erzeugt komplexe Sounds aus einfachen Text-Prompts.
-- 📺 **Authentisches DX7 Retro-Design**: Ein immersives User-Interface mit 80er-Jahre Charme, Membran-Schaltern und LCD-Fonts (`VT323` und `Share Tech Mono`).
-- 📉 **Visuelle Diagramme & Formeln**: Zeigt DX7-Algorithmen und Operator-Hüllkurven (Envelopes) grafisch an. Zusätzlich wird nun die genaue mathematische Operator-Formel (z.B. `(OP2 → OP1) + (OP4 → OP3)`) direkt unter dem Algorithmus eingeblendet!
-- 💾 **Sysex Bank Export**: Exportiert 32-Voice Cartridges (`.syx`), die direkt in **Dexed**, FM8 oder originale Hardware geladen werden können.
+## 🚀 Kern-Features
 
-## Tech Stack
-- **Frontend**: React, Vite, Tailwind CSS 4.
-- **Animationen**: Motion (ehemals Framer Motion).
+- 🧠 **KI-Patch-Generation & Evolution**: Erzeugt DX7 Sounds aus einfachen Text-Prompts und mutiert bestehende Sounds in gezielte Richtungen (z.B. "Dreckiger", "Mehr 80s-Chorus").
+- 💾 **RAM Cartridge System**: Speichere bis zu 32 Sounds direkt im Browser-LocalStorage ab. Exportiere die komplette Cartridge als 32-Voice `.syx` Bank für deinen DX7, Dexed oder FM8.
+- 🧬 **Cartridge Breeding**: Kreuze zwei gespeicherte Sounds miteinander! Wähle zwischen *Algorithmic Cross* (schnell, unvorhersehbar) oder *AI Merge* (intelligente Verschmelzung der Sound-Eigenschaften durch KI).
+- 🎹 **Web MIDI API Integration**: Schließe dein USB-MIDI-Keyboard an und spiele die generierten Patches direkt im Browser (inklusive Anschlagdynamik).
+- 🎛️ **Advanced Tweaking Panel**: Greife in Echtzeit mit 8 Makro-Reglern (Helligkeit, Attack, Decay, Release, Feedback, Fatness, Vibrato, Harmonics) in die Tiefe der Synthese ein.
+- 🔄 **Interaktiver Algorithmus-Wechsler**: Schalte live durch alle 32 Algorithmen, um die Oszillator-Routings zu verändern und ungeahnte Klangfarben zu entdecken.
+- 🔍 **AI Sound-Analyse**: Lass dir von der KI auf Knopfdruck erklären, *warum* dein aktueller Patch so klingt, wie er klingt – ideal um FM-Synthese zu lernen.
+- 🔊 **2-OP WebAudio Preview**: Höre dir deinen generierten Sound ohne Export direkt in der App über die integrierte WebAudio-Engine an.
+
+## 📺 Design & Tech Stack
+- **Design**: Authentisches DX7 Retro-Interface mit LCD-Fonts (`VT323` und `Share Tech Mono`), Membran-Tasten und Yamaha-Farbschema.
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS 4.
+- **Animationen**: Motion (Framer Motion).
 - **KI-Integration**: Google Generative AI SDK (`gemini-flash-latest`).
-- **Icons**: Lucide React.
-- **Fonts**: Google Fonts (`VT323`, `Share Tech Mono`).
 
-## Installation & Setup
+## 🛠️ Installation & Setup
 
 1.  Repository klonen:
     ```bash
@@ -29,7 +33,7 @@ Die Benutzeroberfläche wurde kürzlich komplett überarbeitet und bietet nun ei
     npm install
     ```
 3.  Umgebungsvariablen konfigurieren:
-    Erstelle eine `.env` Datei im Hauptverzeichnis und füge deinen API Key hinzu:
+    Erstelle eine `.env` Datei im Hauptverzeichnis und füge deinen Gemini API Key hinzu:
     ```env
     VITE_GEMINI_API_KEY=DEIN_API_KEY
     ```
@@ -38,12 +42,12 @@ Die Benutzeroberfläche wurde kürzlich komplett überarbeitet und bietet nun ei
     npm run dev
     ```
 
-## DX7 Kompatibilität
-Das Tool exportiert Standard MIDI Sysex Files im 32-Voice Bank Format (Cartridge). Die generierten Sounds werden in Slot 1 abgelegt. Das Export-Format ist voll kompatibel mit:
+## 🎹 Kompatibilität
+Die exportierten `.syx` Dateien sind 100% kompatibel mit:
 - Yamaha DX7 / DX7II / TX802 / TX81Z
-- Dexed (VST/Standalone)
+- Dexed (VST / Standalone)
 - FM8 (Native Instruments)
-- Korg Volca FM
+- Korg Volca FM (1 & 2)
 
-## Lizenz
-MIT
+## 📜 Lizenz
+Dieses Projekt ist unter der **GNU General Public License v3.0 (GPL-3.0)** lizenziert.
