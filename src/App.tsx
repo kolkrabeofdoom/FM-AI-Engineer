@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Download, Music, Settings, Cpu, Layers, Info } from 'lucide-react';
+import { Sparkles, Download, Music, Settings, Cpu, Layers, Info, HelpCircle, X } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createDefaultPatch, createBankSysex } from './utils/dx7';
 import type { DX7Patch } from './utils/dx7';
@@ -9,6 +9,21 @@ import { AlgorithmDiagram } from './components/AlgorithmDiagram';
 import { EnvelopeDiagram } from './components/EnvelopeDiagram';
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
+
+const HELP_TEXTS: Record<string, { title: string; desc: string }> = {
+  brightness: {
+    title: "Helligkeit (Brightness)",
+    desc: "Dieser Regler skaliert das Output-Level (Out) aller Operatoren. In der FM-Synthese steuern die Modulator-Level die Intensität der Obertöne. Ein höherer Wert führt zu einem helleren, metallischeren Klang, während niedrigere Werte den Sound weicher und dumpfer machen."
+  },
+  attack: {
+    title: "Attack-Zeit",
+    desc: "Steuert die Einschwingzeit (Rate 1) aller Operatoren. Ein positiver Wert verlängert die Attack-Phase (der Sound baut sich langsamer auf, gut für Pads). Ein negativer Wert beschleunigt die Attack-Phase (der Sound ist sofort da, ideal für Bässe und Plucks)."
+  },
+  release: {
+    title: "Release-Zeit",
+    desc: "Steuert die Ausklingzeit (Rate 4) aller Operatoren, nachdem die Taste losgelassen wurde. Ein positiver Wert sorgt für einen längeren Ausklang (ähnlich einem Hall-Effekt), während ein negativer Wert den Sound beim Loslassen abrupt abschneidet."
+  }
+};
 
 const SYSTEM_PROMPT = `You are a Yamaha DX7 FM Synthesis Engineer.
 Your goal is to create a DX7 patch based on a text prompt.
@@ -43,8 +58,23 @@ Technical Tips:
 export default function App() {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [patch, setPatch] = useState<DX7Patch | null>(null);
+  const [originalPatch, setOriginalPatch] = useState<DX7Patch | null>(null);
+  const [macros, setMacros] = useState({ brightness: 0, attack: 0, release: 0 });
+  const [activeHelp, setActiveHelp] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const patch = useMemo(() => {
+    if (!originalPatch) return null;
+    return {
+      ...originalPatch,
+      ops: originalPatch.ops.map(op => {
+        const out = Math.max(0, Math.min(99, op.out + macros.brightness));
+        const r1 = Math.max(0, Math.min(99, op.r1 - macros.attack));
+        const r4 = Math.max(0, Math.min(99, op.r4 - macros.release));
+        return { ...op, out, r1, r4 };
+      })
+    };
+  }, [originalPatch, macros]);
 
   const generatePatch = async () => {
     if (!prompt) return;
@@ -75,7 +105,8 @@ export default function App() {
         }))
       };
 
-      setPatch(newPatch);
+      setOriginalPatch(newPatch);
+      setMacros({ brightness: 0, attack: 0, release: 0 });
     } catch (err: any) {
       console.error(err);
       setError(`Error: ${err.message || "Failed to generate patch."}`);
@@ -133,7 +164,7 @@ export default function App() {
         </div>
         
         <div className="flex gap-4 p-1">
-          <div className="px-4 py-2 bg-dx7-magenta rounded-sm border-2 border-[#cc0066] text-[10px] font-mono-tech uppercase tracking-widest text-white font-bold">v1.0.0 Stable</div>
+          <div className="px-4 py-2 bg-dx7-magenta rounded-sm border-2 border-[#cc0066] text-[10px] font-mono-tech uppercase tracking-widest text-white font-bold">v1.2.0 Stable</div>
         </div>
       </header>
 
@@ -223,6 +254,58 @@ export default function App() {
                     </button>
                   </div>
 
+                  {/* Tweaking Panel */}
+                  <div className="bg-dx7-bg border-2 border-slate-800 p-6 rounded-sm mb-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex justify-between items-center text-[10px] font-mono-tech uppercase tracking-widest text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <span>Helligkeit</span>
+                          <button onClick={() => setActiveHelp('brightness')} className="hover:text-dx7-teal transition-colors" title="Info zu Helligkeit"><HelpCircle size={12} /></button>
+                        </div>
+                        <span className={macros.brightness > 0 ? "text-dx7-teal" : macros.brightness < 0 ? "text-dx7-magenta" : ""}>
+                          {macros.brightness > 0 ? `+${macros.brightness}` : macros.brightness}
+                        </span>
+                      </div>
+                      <input 
+                        type="range" min="-50" max="50" value={macros.brightness}
+                        onChange={e => setMacros(m => ({...m, brightness: parseInt(e.target.value)}))}
+                        className="w-full accent-[#00ffff] h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex justify-between items-center text-[10px] font-mono-tech uppercase tracking-widest text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <span>Attack (Zeit)</span>
+                          <button onClick={() => setActiveHelp('attack')} className="hover:text-dx7-teal transition-colors" title="Info zu Attack"><HelpCircle size={12} /></button>
+                        </div>
+                        <span className={macros.attack > 0 ? "text-dx7-teal" : macros.attack < 0 ? "text-dx7-magenta" : ""}>
+                          {macros.attack > 0 ? `+${macros.attack}` : macros.attack}
+                        </span>
+                      </div>
+                      <input 
+                        type="range" min="-50" max="50" value={macros.attack}
+                        onChange={e => setMacros(m => ({...m, attack: parseInt(e.target.value)}))}
+                        className="w-full accent-[#00ffff] h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex justify-between items-center text-[10px] font-mono-tech uppercase tracking-widest text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <span>Release (Zeit)</span>
+                          <button onClick={() => setActiveHelp('release')} className="hover:text-dx7-teal transition-colors" title="Info zu Release"><HelpCircle size={12} /></button>
+                        </div>
+                        <span className={macros.release > 0 ? "text-dx7-teal" : macros.release < 0 ? "text-dx7-magenta" : ""}>
+                          {macros.release > 0 ? `+${macros.release}` : macros.release}
+                        </span>
+                      </div>
+                      <input 
+                        type="range" min="-50" max="50" value={macros.release}
+                        onChange={e => setMacros(m => ({...m, release: parseInt(e.target.value)}))}
+                        className="w-full accent-[#00ffff] h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
                     <div className="md:col-span-5">
                       <AlgorithmDiagram algorithm={patch.algorithm} />
@@ -297,6 +380,43 @@ export default function App() {
           </AnimatePresence>
         </section>
       </main>
+
+      {/* Help Overlay */}
+      <AnimatePresence>
+        {activeHelp && HELP_TEXTS[activeHelp] && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-6"
+            onClick={() => setActiveHelp(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-dx7-panel border-4 border-[#151310] max-w-md w-full rounded-md shadow-2xl overflow-hidden"
+            >
+              <div className="bg-dx7-teal p-4 flex justify-between items-center text-dx7-bg">
+                <h3 className="font-mono-tech font-bold uppercase tracking-widest flex items-center gap-2 text-sm">
+                  <Info size={16} /> {HELP_TEXTS[activeHelp].title}
+                </h3>
+                <button onClick={() => setActiveHelp(null)} className="hover:bg-black/20 p-1 rounded transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-6">
+                <p className="text-slate-300 font-sans leading-relaxed text-sm">
+                  {HELP_TEXTS[activeHelp].desc}
+                </p>
+                <button 
+                  onClick={() => setActiveHelp(null)} 
+                  className="mt-6 w-full py-3 bg-dx7-bg border-2 border-slate-700 rounded-sm font-mono-tech uppercase tracking-widest text-xs text-dx7-teal hover:border-dx7-teal/50 transition-colors shadow-lg shadow-black/50"
+                >
+                  Verstanden
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
