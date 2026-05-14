@@ -43,7 +43,7 @@ export const EnvelopeDiagram: React.FC<EnvelopeDiagramProps> = ({
   const pathData = `M 0 ${points[0][1]} L ${points[1][0]} ${points[1][1]} L ${points[2][0]} ${points[2][1]} L ${points[3][0]} ${points[3][1]} L ${points[4][0]} ${points[4][1]}`;
 
   return (
-    <div className="w-full h-10 bg-slate-950/50 rounded-lg overflow-hidden border border-slate-800/50">
+    <div className="w-full h-10 bg-dx7-panel rounded-sm overflow-hidden border-2 border-[#151310]">
       <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="w-full h-full">
         <path 
           d={pathData} 

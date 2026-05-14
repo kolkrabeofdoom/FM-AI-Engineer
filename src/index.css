@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@theme {
+  --color-dx7-bg: #1c1a17;
+  --color-dx7-panel: #26231f;
+  --color-dx7-teal: #00b4b4;
+  --color-dx7-magenta: #ff0088;
+  --color-dx7-lcd-bg: #8ba783;
+  --color-dx7-lcd-text: #213320;
+  --color-dx7-lcd-red: #ff3333;
+  --font-lcd: "VT323", monospace;
+  --font-mono-tech: "Share Tech Mono", monospace;
+}
 :root {
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

@@ -120,32 +120,32 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans p-6 md:p-12 selection:bg-fuchsia-500/30">
+    <div className="min-h-screen bg-dx7-bg text-slate-100 font-sans p-6 md:p-12 selection:bg-dx7-teal/30">
       <header className="max-w-6xl mx-auto mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-fuchsia-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-fuchsia-500/20">
-              <Cpu className="text-white" size={24} />
+            <div className="w-10 h-10 bg-dx7-teal rounded-sm border-2 border-dx7-panel flex items-center justify-center shadow-lg shadow-dx7-teal/20">
+              <Cpu className="text-dx7-bg" size={24} />
             </div>
-            <h1 className="text-3xl font-black tracking-tighter uppercase italic">FM AI ENGINEER</h1>
+            <h1 className="text-3xl font-lcd tracking-widest text-white uppercase italic">FM AI ENGINEER</h1>
           </div>
-          <p className="text-slate-400 font-medium tracking-tight">The ultimate Yamaha DX7 Patch Designer powered by Gemini</p>
+          <p className="text-slate-400 font-mono-tech tracking-tight">The ultimate Yamaha DX7 Patch Designer</p>
         </div>
         
-        <div className="flex gap-4 p-1 bg-slate-800/50 rounded-lg border border-slate-700/50 backdrop-blur-sm">
-          <div className="px-4 py-2 bg-slate-700/50 rounded-md text-[10px] font-black uppercase tracking-widest text-slate-300">v1.0.0 Stable</div>
+        <div className="flex gap-4 p-1">
+          <div className="px-4 py-2 bg-dx7-magenta rounded-sm border-2 border-[#cc0066] text-[10px] font-mono-tech uppercase tracking-widest text-white font-bold">v1.0.0 Stable</div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Input Section */}
         <section className="lg:col-span-5 space-y-6">
-          <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-3xl shadow-2xl backdrop-blur-md relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <div className="bg-dx7-panel border-b-4 border-[#151310] p-8 rounded-md shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
               <Sparkles size={120} />
             </div>
             
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-fuchsia-500 mb-6 flex items-center gap-2">
+            <h2 className="text-xs font-mono-tech font-bold uppercase tracking-[0.2em] text-dx7-teal mb-6 flex items-center gap-2">
               <Sparkles size={14} /> Sound-Spezifikation
             </h2>
             
@@ -153,22 +153,22 @@ export default function App() {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Beschreibe den Sound (z.B. 'Ein kristallklares E-Piano mit viel Anschlag und langem Hall...')"
-              className="w-full h-40 bg-slate-950/50 border-2 border-slate-800 rounded-2xl p-6 text-lg focus:outline-none focus:border-fuchsia-500/50 transition-all resize-none placeholder:text-slate-600 font-medium"
+              className="w-full h-40 bg-dx7-bg border-2 border-slate-800 rounded-sm p-6 text-lg font-mono-tech text-dx7-teal focus:outline-none focus:border-dx7-teal/50 transition-all resize-none placeholder:text-slate-600"
             />
             
             <button
               onClick={generatePatch}
               disabled={isGenerating || !prompt}
               className={cn(
-                "w-full mt-6 py-5 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all transform active:scale-[0.98]",
+                "w-full mt-6 py-4 rounded-sm font-mono-tech font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-all transform active:translate-y-1 border-b-4",
                 isGenerating || !prompt 
-                  ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
-                  : "bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white shadow-xl shadow-fuchsia-500/20 hover:shadow-fuchsia-500/40 hover:translate-y-[-2px]"
+                  ? "bg-slate-800 text-slate-500 border-slate-900 cursor-not-allowed" 
+                  : "bg-dx7-teal text-dx7-bg border-[#008888] shadow-xl shadow-dx7-teal/20 hover:brightness-110"
               )}
             >
               {isGenerating ? (
                 <>
-                  <div className="w-5 h-5 border-3 border-white/20 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-3 border-dx7-bg/20 border-t-dx7-bg rounded-full animate-spin" />
                   Konstruiere Wellenformen...
                 </>
               ) : (
@@ -178,7 +178,7 @@ export default function App() {
               )}
             </button>
             
-            {error && <p className="mt-4 text-red-400 text-xs font-bold text-center italic">{error}</p>}
+            {error && <p className="mt-4 text-dx7-magenta text-xs font-bold text-center font-mono-tech">{error}</p>}
           </div>
 
           {/* Tips Card */}
@@ -207,19 +207,19 @@ export default function App() {
                 className="space-y-6"
               >
                 {/* Patch Overview */}
-                <div className="bg-slate-900/80 border border-slate-700/50 rounded-3xl p-8 shadow-2xl backdrop-blur-xl border-t-slate-600/30">
+                <div className="bg-dx7-panel border-b-4 border-[#151310] rounded-md p-8 shadow-2xl">
                   <div className="flex justify-between items-start mb-8">
-                    <div>
-                      <h3 className="text-sm font-black uppercase tracking-widest text-slate-500 mb-1">Patch Name</h3>
-                      <div className="text-4xl font-black text-white tracking-tighter uppercase italic bg-gradient-to-r from-white to-slate-500 bg-clip-text text-transparent">
-                        {patch.name}
+                    <div className="flex-1 mr-4">
+                      <h3 className="text-[10px] font-mono-tech uppercase tracking-widest text-dx7-teal mb-2">Patch Name</h3>
+                      <div className="text-3xl font-lcd tracking-widest text-dx7-lcd-text bg-dx7-lcd-bg p-4 rounded-sm shadow-inner uppercase border-4 border-slate-800 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {patch.name || "INIT VOICE"}
                       </div>
                     </div>
                     <button 
                       onClick={downloadSysex}
-                      className="p-4 bg-white text-slate-900 rounded-2xl hover:bg-fuchsia-500 hover:text-white transition-all shadow-xl hover:scale-110 active:scale-95 group"
+                      className="p-4 bg-dx7-magenta text-white border-b-4 border-[#cc0066] rounded-sm hover:brightness-110 transition-all active:translate-y-1 active:border-b-0 group"
                     >
-                      <Download size={24} className="group-hover:animate-bounce" />
+                      <Download size={24} className="group-hover:animate-pulse" />
                     </button>
                   </div>
 
@@ -229,20 +229,20 @@ export default function App() {
                     </div>
                     
                     <div className="md:col-span-7 grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 flex flex-col items-center justify-center">
-                        <Music size={20} className="text-indigo-500 mb-2" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Feedback</span>
-                        <span className="text-3xl font-black text-white">{patch.feedback}</span>
+                      <div className="p-4 bg-dx7-bg rounded-sm border-2 border-slate-800 flex flex-col items-center justify-center">
+                        <Music size={20} className="text-dx7-teal mb-2" />
+                        <span className="text-[10px] font-mono-tech uppercase tracking-widest text-slate-500">Feedback</span>
+                        <span className="text-3xl font-lcd text-dx7-lcd-red">{patch.feedback}</span>
                       </div>
-                      <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 flex flex-col items-center justify-center">
-                        <Cpu size={20} className="text-emerald-500 mb-2" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Operators</span>
-                        <span className="text-3xl font-black text-white">6</span>
+                      <div className="p-4 bg-dx7-bg rounded-sm border-2 border-slate-800 flex flex-col items-center justify-center">
+                        <Cpu size={20} className="text-dx7-teal mb-2" />
+                        <span className="text-[10px] font-mono-tech uppercase tracking-widest text-slate-500">Operators</span>
+                        <span className="text-3xl font-lcd text-dx7-lcd-red">6</span>
                       </div>
-                      <div className="col-span-2 p-4 bg-indigo-600/10 border border-indigo-500/20 rounded-2xl flex items-center gap-4">
-                         <Info size={16} className="text-indigo-400" />
-                         <span className="text-[9px] font-bold text-indigo-300 leading-tight uppercase tracking-tighter">
-                           Der Algorithmus bestimmt, wie die Operatoren einander modulieren. Die violetten Boxen sind Carrier (Hörbar).
+                      <div className="col-span-2 p-4 bg-dx7-teal/10 border border-dx7-teal/20 rounded-sm flex items-center gap-4">
+                         <Info size={16} className="text-dx7-teal shrink-0" />
+                         <span className="text-[10px] font-mono-tech text-dx7-teal/80 uppercase">
+                           Der Algorithmus bestimmt, wie die Operatoren einander modulieren. Die farbigen Boxen sind Carrier (Hörbar).
                          </span>
                       </div>
                     </div>
@@ -251,26 +251,26 @@ export default function App() {
                   {/* Visual Feedback for Operators */}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {patch.ops.map((op, i) => (
-                      <div key={i} className="p-4 bg-slate-950/30 border border-slate-800/50 rounded-xl group hover:border-fuchsia-500/30 transition-colors">
+                      <div key={i} className="p-4 bg-dx7-bg border-2 border-slate-800 rounded-sm group hover:border-dx7-teal/50 transition-colors">
                         <div className="flex justify-between items-center mb-3">
-                          <span className="text-[10px] font-black uppercase text-slate-600 tracking-tighter group-hover:text-fuchsia-500/50 transition-colors">OP {6 - i}</span>
-                          <div className="text-[10px] font-black text-slate-500">
-                             OUT <span className="text-slate-300">{op.out}</span>
+                          <span className="text-[12px] font-mono-tech uppercase text-slate-400 group-hover:text-dx7-teal transition-colors">OP {6 - i}</span>
+                          <div className="text-[10px] font-mono-tech text-slate-500">
+                             OUT <span className="text-dx7-teal font-lcd text-lg">{op.out}</span>
                           </div>
                         </div>
                         
                         <EnvelopeDiagram 
                           r1={op.r1} r2={op.r2} r3={op.r3} r4={op.r4}
                           l1={op.l1} l2={op.l2} l3={op.l3} l4={op.l4}
-                          color={i >= 3 ? "#d946ef" : "#6366f1"} 
+                          color={i >= 3 ? "#ff0088" : "#00b4b4"} 
                         />
                         
-                        <div className="mt-3 flex justify-between items-center">
-                          <div className="flex gap-1">
-                            <span className="text-[9px] font-bold text-slate-500">Freq:</span>
-                            <span className="text-[9px] font-black text-slate-300">{op.f_coarse}.{op.f_fine}</span>
+                        <div className="mt-3 flex justify-between items-center font-mono-tech">
+                          <div className="flex gap-2 items-center">
+                            <span className="text-[10px] text-slate-500 uppercase">Freq</span>
+                            <span className="text-[12px] font-lcd text-dx7-lcd-red">{op.f_coarse}.{op.f_fine}</span>
                           </div>
-                          <div className="text-[9px] font-bold text-slate-600 italic">
+                          <div className="text-[10px] text-dx7-teal/70 uppercase">
                              {op.f_coarse === 0 ? "FIXED" : "RATIO"}
                           </div>
                         </div>
