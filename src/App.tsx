@@ -1,6 +1,6 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Download, Music, Settings, Cpu, Layers, Info, HelpCircle, X, Dna, Upload, BookOpen, HardDrive, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Sparkles, Download, Music, Settings, Cpu, Layers, Info, HelpCircle, X, Dna, Upload, BookOpen, HardDrive, ChevronLeft, ChevronRight, Search, Image as ImageIcon, Mic, Ghost } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createDefaultPatch, createBankSysex, parseSysex } from './utils/dx7';
 import type { DX7Patch } from './utils/dx7';
@@ -11,7 +11,9 @@ import { VirtualKeyboard } from './components/VirtualKeyboard';
 import { Documentation } from './components/Documentation';
 import { Cartridge } from './components/Cartridge';
 import { savePatchToCartridge } from './lib/storage';
+import { initAudio, FMSynthVoice } from './lib/audio';
 
+const PENTATONIC = [48, 51, 53, 55, 58, 60, 63, 65, 67, 70, 72];
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
 const HELP_TEXTS: Record<string, { title: string; desc: string }> = {
@@ -104,7 +106,32 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'synth' | 'docs' | 'cartridge'>('synth');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [mediaFile, setMediaFile] = useState<{ data: string, mimeType: string, url: string } | null>(null);
+  const [isGhostMode, setIsGhostMode] = useState(false);
+  const ghostVoiceRef = useRef<any>(null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Data = (event.target?.result as string).split(',')[1];
+      setMediaFile({
+        data: base64Data,
+        mimeType: file.type,
+        url: URL.createObjectURL(file)
+      });
+    };
+    reader.readAsDataURL(file);
+
+    if (mediaInputRef.current) {
+      mediaInputRef.current.value = '';
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -126,7 +153,6 @@ export default function App() {
       fileInputRef.current.value = '';
     }
   };
-
   const patch = useMemo(() => {
     if (!originalPatch) return null;
     const lfo_speed = Math.max(0, Math.min(99, (originalPatch.lfo_speed ?? 35) + macros.vibrato * 2));
@@ -156,8 +182,52 @@ export default function App() {
     };
   }, [originalPatch, macros]);
 
+  // Ghost Mode Logic
+  useEffect(() => {
+    if (!isGhostMode || !patch) return;
+
+    let localCtx: AudioContext | null = null;
+    try {
+      localCtx = initAudio();
+    } catch (e) {}
+
+    // Arpeggiator
+    const arpInterval = setInterval(() => {
+      if (!localCtx) return;
+      try {
+        if (ghostVoiceRef.current) {
+           ghostVoiceRef.current.stop(localCtx.currentTime + 1.0);
+        }
+        const note = PENTATONIC[Math.floor(Math.random() * PENTATONIC.length)];
+        const finalNote = note + (Math.random() > 0.5 ? -12 : 0);
+        const voice = new FMSynthVoice(localCtx, finalNote, patch);
+        voice.start(localCtx.currentTime);
+        ghostVoiceRef.current = voice;
+      } catch (e) {}
+    }, 4000);
+
+    // Algorithmic Drift
+    const driftInterval = setInterval(() => {
+      setMacros(prev => ({
+        ...prev,
+        brightness: Math.max(-50, Math.min(50, prev.brightness + Math.floor(Math.random() * 10 - 5))),
+        vibrato: Math.max(-50, Math.min(50, prev.vibrato + Math.floor(Math.random() * 6 - 3))),
+        harmonics: Math.max(-50, Math.min(50, prev.harmonics + Math.floor(Math.random() * 8 - 4))),
+        feedback: Math.max(-50, Math.min(50, prev.feedback + Math.floor(Math.random() * 10 - 5))),
+      }));
+    }, 8000);
+
+    return () => {
+      clearInterval(arpInterval);
+      clearInterval(driftInterval);
+      if (ghostVoiceRef.current && localCtx) {
+         ghostVoiceRef.current.stop(localCtx.currentTime);
+      }
+    };
+  }, [isGhostMode, patch]);
+
   const generatePatch = async () => {
-    if (!prompt) return;
+    if (!prompt && !mediaFile) return;
     setIsGenerating(true);
     setError(null);
 
@@ -165,10 +235,26 @@ export default function App() {
       console.log("Starting generation with gemini-flash-latest...");
       const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
       
-      const result = await model.generateContent([
-        { text: SYSTEM_PROMPT },
-        { text: `Create a DX7 patch for: ${prompt}` }
-      ]);
+      let finalPrompt = `Create a DX7 patch for: ${prompt}`;
+      const parts: any[] = [{ text: SYSTEM_PROMPT }];
+
+      if (mediaFile) {
+        if (mediaFile.mimeType.startsWith('audio/')) {
+           finalPrompt = `Analysiere dieses Audio. Generiere den exakten DX7 Patch, um diese Klangfarbe nachzubauen. Achte auf Hüllkurven und Algorithmus. ${prompt ? 'Zusätzliche Info: ' + prompt : ''}`;
+        } else if (mediaFile.mimeType.startsWith('image/')) {
+           finalPrompt = `Analysiere die Stimmung, Farben und Textur dieses Bildes. Generiere einen DX7 Patch, der dieses Bild klanglich perfekt repräsentiert. ${prompt ? 'Zusätzliche Info: ' + prompt : ''}`;
+        }
+        parts.push({
+          inlineData: {
+            data: mediaFile.data,
+            mimeType: mediaFile.mimeType
+          }
+        });
+      }
+      
+      parts.push({ text: finalPrompt });
+
+      const result = await model.generateContent(parts);
       
       const text = result.response.text();
       const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
@@ -266,7 +352,7 @@ ${JSON.stringify(originalPatch, null, 2)}`;
     }
 
     // Fallback: Standard automatic download
-    const blob = new Blob([sysex.buffer], { type: 'application/octet-stream' });
+    const blob = new Blob([sysex.buffer as ArrayBuffer], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -413,16 +499,62 @@ Kombiniere die besten Eigenschaften beider Patches zu einem neuen, genialen Soun
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Beschreibe den Sound (z.B. 'Ein kristallklares E-Piano mit viel Anschlag und langem Hall...')"
-              className="w-full h-40 bg-dx7-bg border-2 border-slate-800 rounded-sm p-6 text-lg font-mono-tech text-dx7-teal focus:outline-none focus:border-dx7-teal/50 transition-all resize-none placeholder:text-slate-600"
+              className="w-full h-32 bg-dx7-bg border-2 border-slate-800 rounded-sm p-6 text-lg font-mono-tech text-dx7-teal focus:outline-none focus:border-dx7-teal/50 transition-all resize-none placeholder:text-slate-600 mb-4"
             />
+            
+            {/* Media Upload Area */}
+            <div className="flex gap-4">
+              <button 
+                onClick={() => mediaInputRef.current?.click()}
+                className="flex-1 py-3 border-2 border-dashed border-slate-700 bg-slate-900/50 hover:bg-slate-800 rounded-sm flex items-center justify-center gap-3 text-slate-400 hover:text-dx7-teal transition-all font-mono-tech text-xs tracking-widest uppercase"
+              >
+                {mediaFile ? (
+                   <span className="text-dx7-teal flex items-center gap-2">
+                     {mediaFile.mimeType.startsWith('image/') ? <ImageIcon size={16} /> : <Mic size={16} />}
+                     Media geladen. Klicken zum Ändern.
+                   </span>
+                ) : (
+                  <>
+                    <Upload size={16} /> Drop Audio/Image (.wav, .mp3, .jpg, .png)
+                  </>
+                )}
+              </button>
+              {mediaFile && (
+                <button 
+                  onClick={() => setMediaFile(null)} 
+                  className="px-4 border-2 border-slate-800 bg-slate-900 text-dx7-magenta hover:bg-[#cc0066] hover:text-white rounded-sm transition-all"
+                  title="Media entfernen"
+                >
+                  <X size={16} />
+                </button>
+              )}
+              <input 
+                type="file" 
+                accept="image/*,audio/*" 
+                ref={mediaInputRef} 
+                onChange={handleMediaUpload} 
+                className="hidden" 
+              />
+            </div>
+            
+            {mediaFile && mediaFile.mimeType.startsWith('image/') && (
+              <div className="mt-4 border-2 border-slate-800 p-2 rounded-sm bg-slate-900 flex justify-center">
+                <img src={mediaFile.url} alt="Uploaded media" className="h-24 object-contain rounded-sm" />
+              </div>
+            )}
+            {mediaFile && mediaFile.mimeType.startsWith('audio/') && (
+              <div className="mt-4 border-2 border-slate-800 p-4 rounded-sm bg-slate-900 flex items-center justify-center gap-3 text-dx7-teal font-mono-tech uppercase tracking-widest text-xs">
+                <Mic size={20} className="animate-pulse" /> Audio-Referenz geladen
+              </div>
+            )}
             
             <div className="flex gap-4 mt-6">
               <button
                 onClick={generatePatch}
-                disabled={isGenerating || !prompt}
+                disabled={isGenerating || (!prompt && !mediaFile)}
                 className={cn(
                   "flex-1 py-4 rounded-sm font-mono-tech font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-all transform active:translate-y-1 border-b-4",
-                  isGenerating || !prompt 
+                  isGenerating || (!prompt && !mediaFile)
                     ? "bg-slate-800 text-slate-500 border-slate-900 cursor-not-allowed" 
                     : "bg-dx7-teal text-dx7-bg border-[#008888] shadow-xl shadow-dx7-teal/20 hover:brightness-110"
                 )}
@@ -507,6 +639,16 @@ Kombiniere die besten Eigenschaften beider Patches zu einem neuen, genialen Soun
                 </div>
                 
                 <div className="mt-6 pt-6 border-t-2 border-slate-800">
+                  <button
+                    onClick={() => setIsGhostMode(!isGhostMode)}
+                    className={cn(
+                      "w-full py-3 border-2 rounded-sm font-mono-tech uppercase tracking-widest text-[10px] transition-all flex justify-center items-center gap-2 mb-4",
+                      isGhostMode ? "bg-dx7-teal/20 border-dx7-teal text-dx7-teal shadow-[0_0_15px_rgba(0,255,255,0.3)] animate-pulse" : "bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300"
+                    )}
+                  >
+                    <Ghost size={14} /> {isGhostMode ? "Ghost Mode: Active (Auto-Evolving)" : "Ghost in the Machine (Auto-Play)"}
+                  </button>
+
                   <button
                     onClick={analyzePatch}
                     disabled={isAnalyzing || isGenerating || mutatingId !== null}

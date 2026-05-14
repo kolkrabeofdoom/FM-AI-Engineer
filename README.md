@@ -1,25 +1,36 @@
-# FM AI Engineer (Studio Edition)
+<p align="center">
+  <img src="banner.png" alt="FM-AI-Engineer Banner" width="100%">
+</p>
 
-**FM AI Engineer** ist ein hochmodernes, KI-gestütztes Sounddesign-Tool für die legendäre Yamaha DX7 Architektur. Durch die Nutzung von Google Gemini werden musikalische Text-Beschreibungen (z.B. "ein warmer, kristallklarer E-Piano Sound aus den 80ern") direkt in präzise FM-Synthese-Parameter übersetzt.
+# FM AI Engineer (V2.0 Multimodal Edition)
 
-Mit der neuesten Version hat sich das Tool von einem einfachen Generator zu einer voll ausgestatteten **Studio-Workstation** entwickelt – komplett mit RAM-Cartridge, MIDI-Integration und intelligenten Sound-Breeding-Fähigkeiten im authentischen Retro-Design.
+**FM AI Engineer** ist die ultimative, KI-gestützte Sounddesign-Workstation für die legendäre Yamaha DX7 Architektur. Durch die Integration von Google Gemini 1.5 Flash durchbricht dieses Tool die Grenzen klassischer Synthesizer-Programmierung: Verwandle Audio, Bilder und natürliche Text-Beschreibungen direkt in technisch präzise, spielbare FM-Synthese-Parameter!
 
-## 🚀 Kern-Features
+Egal ob du einen Synth-Bass aus einem Skrillex-Track nachbauen willst (Audio-to-Patch), ein stimmungsvolles Wald-Bild vertonen möchtest (Image-to-Patch) oder einfach nur "ein warmes 80s E-Piano" eintippst – die KI übersetzt deine Intentionen direkt in einen hochkomplexen 6-Operator-Patch.
 
-- 🧠 **KI-Patch-Generation & Evolution**: Erzeugt DX7 Sounds aus einfachen Text-Prompts und mutiert bestehende Sounds in gezielte Richtungen (z.B. "Dreckiger", "Mehr 80s-Chorus").
-- 💾 **RAM Cartridge System**: Speichere bis zu 32 Sounds direkt im Browser-LocalStorage ab. Exportiere die komplette Cartridge als 32-Voice `.syx` Bank für deinen DX7, Dexed oder FM8.
-- 🧬 **Cartridge Breeding**: Kreuze zwei gespeicherte Sounds miteinander! Wähle zwischen *Algorithmic Cross* (schnell, unvorhersehbar) oder *AI Merge* (intelligente Verschmelzung der Sound-Eigenschaften durch KI).
-- 🎹 **Web MIDI API Integration**: Schließe dein USB-MIDI-Keyboard an und spiele die generierten Patches direkt im Browser (inklusive Anschlagdynamik).
-- 🎛️ **Advanced Tweaking Panel**: Greife in Echtzeit mit 8 Makro-Reglern (Helligkeit, Attack, Decay, Release, Feedback, Fatness, Vibrato, Harmonics) in die Tiefe der Synthese ein.
-- 🔄 **Interaktiver Algorithmus-Wechsler**: Schalte live durch alle 32 Algorithmen, um die Oszillator-Routings zu verändern und ungeahnte Klangfarben zu entdecken.
-- 🔍 **AI Sound-Analyse**: Lass dir von der KI auf Knopfdruck erklären, *warum* dein aktueller Patch so klingt, wie er klingt – ideal um FM-Synthese zu lernen.
-- 🔊 **2-OP WebAudio Preview**: Höre dir deinen generierten Sound ohne Export direkt in der App über die integrierte WebAudio-Engine an.
+## 🚀 The V2.0 Multimodal Features
+
+Mit dem V2.0 Update ist das Projekt von einem simplen Text-Generator zu einem vollwertigen, multimodalen KI-Labor herangewachsen:
+
+- 🎵 **Audio-to-Patch (Reverse Engineering)**: Lade eine `.wav` oder `.mp3` Datei hoch. Die KI analysiert das Frequenzspektrum und die Hüllkurven und generiert einen DX7 Patch, der diesen Sound exakt nachahmt.
+- 🖼️ **Image-to-Patch (Synästhesie)**: Lade Bilder (`.jpg`, `.png`) hoch. Die App übersetzt Stimmung, Farben und Textur in ein passendes klangliches Gegenstück.
+- 👻 **Ghost in the Machine (Ambient Mode)**: Lass die KI für dich spielen! Dieser Modus feuert automatisch atmosphärische, arpeggierte Noten ab und mutiert den Synthesizer algorithmisch im Hintergrund weiter. Ein sich endlos verändernder, generativer Soundtrack.
+- 🧠 **AI Sound-Analyse ("Warum klingt das so?")**: Auf Knopfdruck analysiert Gemini deinen Sound und erklärt dir als Musiker die Funktion der Algorithmen und Hüllkurven.
+
+## 🎛️ Studio Workstation Tools
+
+- 💾 **RAM Cartridge System**: 32 integrierte Speicherplätze im Browser (`localStorage`). Exportiere komplette `.syx` Bänke für Live-Einsätze.
+- 🧬 **Cartridge Breeding**: Wähle zwei Sounds aus deiner Cartridge und verschmelze sie entweder *algorithmisch* (superschnell) oder durch *AI Merge* (intelligente Synthese der Eigenschaften).
+- 🎹 **Web MIDI API Integration**: Schließe ein USB-MIDI-Keyboard an (Plug & Play) und spiele deine generierten KI-Sounds in Echtzeit mit voller Anschlagdynamik im Browser.
+- 🎚️ **Advanced Tweaking Panel**: Verfeinere Sounds über 8 globale Makro-Regler (Brightness, Attack, Decay, Release, Feedback, Detune, Vibrato, Harmonics) anstatt 100 kleine Parameter zu tippen.
+- 🔄 **Live Algorithm Switcher**: Schalte in Echtzeit mit Pfeiltasten durch die 32 Verschaltungen und erzeuge "glückliche Unfälle".
+- 🔊 **WebAudio Preview Engine**: Schnelles 2-OP Vorhören der Hüllkurven direkt im Browser.
 
 ## 📺 Design & Tech Stack
-- **Design**: Authentisches DX7 Retro-Interface mit LCD-Fonts (`VT323` und `Share Tech Mono`), Membran-Tasten und Yamaha-Farbschema.
+- **Design**: Liebevoll gestaltetes DX7 Retro-Interface mit authentischem Color-Grading, LCD-Screens (`VT323` Font) und Membran-Schaltern.
 - **Frontend**: React, TypeScript, Vite, Tailwind CSS 4.
 - **Animationen**: Motion (Framer Motion).
-- **KI-Integration**: Google Generative AI SDK (`gemini-flash-latest`).
+- **KI-Integration**: Google Generative AI SDK (`gemini-1.5-flash`).
 
 ## 🛠️ Installation & Setup
 
@@ -33,7 +44,7 @@ Mit der neuesten Version hat sich das Tool von einem einfachen Generator zu eine
     npm install
     ```
 3.  Umgebungsvariablen konfigurieren:
-    Erstelle eine `.env` Datei im Hauptverzeichnis und füge deinen Gemini API Key hinzu:
+    Erstelle eine `.env` Datei im Hauptverzeichnis und füge deinen Gemini API Key hinzu (zwingend erforderlich für die Multimodal-Features!):
     ```env
     VITE_GEMINI_API_KEY=DEIN_API_KEY
     ```
