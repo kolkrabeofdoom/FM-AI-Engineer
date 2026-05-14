@@ -1,4 +1,4 @@
-import { BookOpen, Cpu, Lightbulb, Layers, Waves, Settings2, Keyboard } from 'lucide-react';
+import { BookOpen, Cpu, Lightbulb, Layers, Waves, Settings2, Keyboard, Upload, Ghost, Activity } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export function Documentation() {
@@ -27,11 +27,12 @@ export function Documentation() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-dx7-bg border-2 border-slate-800 p-6 rounded-sm hover:border-dx7-teal/30 transition-colors">
-            <h4 className="text-dx7-teal font-bold mb-2 uppercase tracking-wider text-sm">A. Generieren (Prompting)</h4>
+            <h4 className="text-dx7-teal font-bold mb-2 uppercase tracking-wider text-sm">A. Generieren & Multimodal</h4>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Beschreibe den gewünschten Sound in das große Textfeld. 
+              Beschreibe den gewünschten Sound im Textfeld oder nutze die <strong>Multimodale Eingabe</strong>.
               <br/><br/>
-              <strong>Pro-Tipp:</strong> Nutze deskriptive Adjektive aus den 80ern. Statt "Mach ein Piano" schreibe: <em>"Ein kristallklares, glockiges E-Piano im Stil von Whitney Houston, mit starkem Attack und weichem, langen Hall-Release."</em>
+              • <strong>Audio-Upload:</strong> Lade ein MP3/WAV hoch. Die KI analysiert den Klang und baut den DX7-Patch nach (Reverse Engineering).<br/>
+              • <strong>Bild-Upload:</strong> Lade Fotos hoch. Die KI übersetzt Farben und Stimmung in klangliche Texturen (Synästhesie).
             </p>
           </div>
           
@@ -61,12 +62,18 @@ export function Documentation() {
             </p>
           </div>
 
-          <div className="bg-dx7-bg border-2 border-slate-800 p-6 rounded-sm hover:border-[#cc0066]/30 transition-colors md:col-span-2">
-            <h4 className="text-[#cc0066] font-bold mb-2 uppercase tracking-wider text-sm">E. Cartridge & Breeding (Sounds Kreuzen)</h4>
+          <div className="bg-dx7-bg border-2 border-slate-800 p-6 rounded-sm hover:border-[#cc0066]/30 transition-colors md:col-span-1">
+            <h4 className="text-[#cc0066] font-bold mb-2 uppercase tracking-wider text-sm">E. Cartridge & Breeding</h4>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Wechsle oben in den <strong>Cartridge-Tab</strong>, um auf deine 32 Speicherplätze zuzugreifen. Dort kannst du komplette Bänke exportieren.
-              <br/><br/>
-              Aktiviere den <strong>🧬 Breed Patches</strong> Modus und wähle zwei Sounds aus. Klicke auf <em>Algorithmic Cross</em> für eine rasante mathematische Kreuzung der Oszillatoren, oder auf <em>AI Merge</em>, um die Eigenschaften beider Sounds intelligent von Gemini verschmelzen zu lassen.
+              Speichere Sounds in deine 32 RAM-Plätze. Nutze den <strong>🧬 Breed Modus</strong>, um zwei Sounds algorithmisch oder per KI-Fusion zu neuen Hybriden zu kreuzen.
+            </p>
+          </div>
+
+          <div className="bg-dx7-bg border-2 border-slate-800 p-6 rounded-sm hover:border-dx7-teal/30 transition-colors md:col-span-1">
+            <h4 className="text-dx7-teal font-bold mb-2 uppercase tracking-wider text-sm">F. Ghost Mode & Oszilloskop</h4>
+            <p className="text-slate-400 text-sm leading-relaxed text-xs">
+              • <strong>Ghost Mode:</strong> Die KI spielt automatisch Ambient-Noten und mutiert den Patch kontinuierlich im Hintergrund (Ambient Drift).<br/>
+              • <strong>Oszilloskop:</strong> Beobachte die FM-Wellenform in Echtzeit im unteren linken Panel.
             </p>
           </div>
         </div>
