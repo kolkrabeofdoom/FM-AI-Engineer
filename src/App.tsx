@@ -10,6 +10,7 @@ import { EnvelopeDiagram } from './components/EnvelopeDiagram';
 import { VirtualKeyboard } from './components/VirtualKeyboard';
 import { Documentation } from './components/Documentation';
 import { Cartridge } from './components/Cartridge';
+import { Oscilloscope } from './components/Oscilloscope';
 import { savePatchToCartridge } from './lib/storage';
 import { initAudio, FMSynthVoice } from './lib/audio';
 
@@ -436,7 +437,7 @@ Kombiniere die besten Eigenschaften beider Patches zu einem neuen, genialen Soun
         </div>
         
         <div className="flex flex-col items-end gap-4">
-          <div className="px-4 py-1 bg-dx7-magenta rounded-sm border-2 border-[#cc0066] text-[10px] font-mono-tech uppercase tracking-widest text-white font-bold">v1.2.0 Stable</div>
+          <div className="px-4 py-1 bg-dx7-magenta rounded-sm border-2 border-[#cc0066] text-[10px] font-mono-tech uppercase tracking-widest text-white font-bold">v2.1.0 Stable</div>
           
           <div className="flex gap-2 bg-slate-900 p-1 rounded-md border border-slate-800">
             <button 
@@ -675,6 +676,11 @@ Kombiniere die besten Eigenschaften beider Patches zu einem neuen, genialen Soun
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Oscilloscope Section */}
+          <div className="mt-6">
+            <Oscilloscope />
+          </div>
         </section>
 
         {/* Result Section */}

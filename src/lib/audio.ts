@@ -1,6 +1,7 @@
 import type { DX7Patch } from '../utils/dx7';
 
 let audioContext: AudioContext | null = null;
+let globalAnalyser: AnalyserNode | null = null;
 
 // Convert DX7 rate (0-99) to seconds
 const rateToSeconds = (rate: number) => {
@@ -52,7 +53,8 @@ export class FMSynthVoice {
     this.modGain.connect(this.carrier.frequency);
     this.carrier.connect(this.carrierGain);
     this.carrierGain.connect(masterGain);
-    masterGain.connect(ctx.destination);
+    masterGain.connect(getAnalyser()!);
+    // getAnalyser() will already be connected to destination
 
     this.carrier.type = 'sine';
     this.modulator.type = 'sine';
@@ -113,10 +115,23 @@ export const initAudio = () => {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
-  if (audioContext.state === 'suspended') {
+  
+  if (!globalAnalyser && audioContext) {
+    globalAnalyser = audioContext.createAnalyser();
+    globalAnalyser.fftSize = 2048;
+    globalAnalyser.connect(audioContext.destination);
+  }
+
+  if (audioContext && audioContext.state === 'suspended') {
     audioContext.resume();
   }
   return audioContext;
 };
 
 export const getAudioContext = () => audioContext;
+export const getAnalyser = () => {
+  if (!globalAnalyser && audioContext) {
+    initAudio();
+  }
+  return globalAnalyser;
+};
