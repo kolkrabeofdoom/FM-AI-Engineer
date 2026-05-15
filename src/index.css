@@ -42,4 +42,38 @@ body {
   .text-shadow-glow {
     text-shadow: 0 0 5px rgba(144, 238, 144, 0.6), 0 0 10px rgba(144, 238, 144, 0.4);
   }
+
+  .crt::before {
+    content: " ";
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    z-index: 9999;
+    background-size: 100% 3px, 6px 100%;
+    pointer-events: none;
+    animation: flicker 0.15s infinite;
+  }
+
+  .crt-vignette::after {
+    content: " ";
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.4) 100%);
+    z-index: 9998;
+    pointer-events: none;
+  }
+}
+
+@keyframes flicker {
+  0% { opacity: 0.95; }
+  50% { opacity: 0.90; }
+  100% { opacity: 0.95; }
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Download, Music, Settings, Cpu, Info, HelpCircle, X, Dna, Upload, BookOpen, HardDrive, ChevronLeft, ChevronRight, Search, Image as ImageIcon, Mic, Ghost } from 'lucide-react';
+import { Sparkles, Download, Music, Settings, Cpu, Info, HelpCircle, X, Dna, Upload, BookOpen, HardDrive, ChevronLeft, ChevronRight, Search, Image as ImageIcon, Mic, Ghost, Monitor } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createDefaultPatch, createBankSysex, parseSysex } from './utils/dx7';
 import type { DX7Patch } from './utils/dx7';
@@ -95,6 +95,7 @@ Technical Tips:
 
 export default function App() {
   const [prompt, setPrompt] = useState('');
+  const [crtMode, setCrtMode] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [originalPatch, setOriginalPatch] = useState<DX7Patch | null>(null);
   const [macros, setMacros] = useState({ 
@@ -424,7 +425,7 @@ Kombiniere die besten Eigenschaften beider Patches zu einem neuen, genialen Soun
   };
 
   return (
-    <div className="min-h-screen bg-dx7-bg text-slate-100 font-sans p-6 md:p-12 selection:bg-dx7-teal/30">
+    <div className={cn("min-h-screen bg-dx7-bg text-slate-100 font-sans p-6 md:p-12 selection:bg-dx7-teal/30", crtMode && "crt crt-vignette")}>
       <header className="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-2 border-slate-800 pb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -440,6 +441,16 @@ Kombiniere die besten Eigenschaften beider Patches zu einem neuen, genialen Soun
           <div className="px-4 py-1 bg-dx7-magenta rounded-sm border-2 border-[#cc0066] text-[10px] font-mono-tech uppercase tracking-widest text-white font-bold">v3.0.0 Stable</div>
           
           <div className="flex gap-2 bg-slate-900 p-1 rounded-md border border-slate-800">
+            <button 
+              onClick={() => setCrtMode(!crtMode)}
+              className={cn(
+                "px-4 py-2 flex items-center gap-2 rounded-sm text-xs font-bold uppercase tracking-wider transition-colors border-2",
+                crtMode ? "bg-[#90EE90]/20 text-[#90EE90] border-[#90EE90] shadow-[0_0_10px_#90EE90]" : "bg-transparent text-slate-400 border-transparent hover:text-slate-300"
+              )}
+              title="Retro CRT Mode"
+            >
+              <Monitor size={14} /> CRT
+            </button>
             <button 
               onClick={() => setActiveTab('synth')}
               className={cn(
