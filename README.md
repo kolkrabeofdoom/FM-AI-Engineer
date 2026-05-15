@@ -1,6 +1,6 @@
 ![FM-AI-Engineer Banner](https://raw.githubusercontent.com/kolkrabeofdoom/FM-AI-Engineer/main/fm_ai_banner_1778788294687.png)
 
-# FM-AI-Engineer 🎹 v3.0.0 (The Hexter WASM Update)
+# FM-AI-Engineer 🎹 v3.1.0 (The Retro FX Update)
 
 **The Ultimate Multimodal AI-Powered Yamaha DX7 Synthesizer Assistant & WebAssembly Emulator**
 
@@ -10,7 +10,18 @@ Mit dem neuen **v3.0.0 Update** durchbricht das Projekt die bisherigen Grenzen: 
 
 ---
 
-## 🌟 The V3.0 Multimodal & WASM Features
+## 🌟 V3.1.0 Features (QoL & Audio FX)
+
+Das **v3.1.0 Update** baut auf der WASM-Engine auf und bringt massig "Quality of Life" und Retro-Vibes:
+* 📺 **CRT Mode**: Ein zuschaltbarer CSS-Filter für authentisches Röhrenmonitor-Flimmern und Scanlines.
+* ⌨️ **QWERTY Support**: Spiele den Synthesizer direkt über deine Computertastatur.
+* 🎲 **Surprise Me**: Ein Prompt-Generator gegen kreative Blockaden.
+* 📟 **LCD Display**: Das Patch-Display erstrahlt nun im authentischen 16x2 Zeichen Neo-Green LCD Look.
+* 🎛️ **80s Stereo FX**: Eine WebAudio-Effektkette (Stereo-Chorus & Raumhall) macht die knochentrockenen FM-Sounds riesig!
+
+---
+
+## 🌟 The V3.0 Multimodal & WASM Core
 
 ### 🎛️ Echte 6-OP WASM Engine (NEU in v3.0)
 Die größte Neuerung dieses Releases! Die App nutzt das `hexterjs`-Paket, einen C++ Port des bekannten Hexter DX7-Emulators, der mittels Emscripten zu WebAssembly (.wasm) kompiliert wurde. 

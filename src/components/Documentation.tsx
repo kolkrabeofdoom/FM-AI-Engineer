@@ -31,7 +31,7 @@ export function Documentation() {
           <div className="bg-dx7-bg border-2 border-slate-800 p-6 rounded-sm hover:border-dx7-teal/30 transition-colors">
             <h4 className="text-dx7-teal font-bold mb-2 uppercase tracking-wider text-sm">A. Generieren & Multimodal</h4>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Beschreibe den gewünschten Sound im Textfeld oder nutze die <strong>Multimodale Eingabe</strong>.
+              Beschreibe den gewünschten Sound im Textfeld oder nutze die <strong>Multimodale Eingabe</strong>. Brauchst du Inspiration? Klicke auf den <strong>Surprise Me 🎲</strong> Button für zufällige Prompts!
               <br/><br/>
               • <strong>Audio-Upload:</strong> Lade ein MP3/WAV hoch. Die KI analysiert den Klang und baut den DX7-Patch nach (Reverse Engineering).<br/>
               • <strong>Bild-Upload:</strong> Lade Fotos hoch. Die KI übersetzt Farben und Stimmung in klangliche Texturen (Synästhesie).
@@ -52,7 +52,9 @@ export function Documentation() {
             <p className="text-slate-400 text-sm leading-relaxed">
               Die App nutzt nun einen echten in C++ geschriebenen DX7 Emulator (Hexter), der via WebAssembly nativ im Browser läuft. Alle 32 Algorithmen, Feedbacks und Hüllkurven werden zu 100% hardware-akkurat berechnet!
               <br/><br/>
-              <strong>MIDI-Support:</strong> Schließe ein USB-MIDI-Keyboard an! Die App erkennt es sofort (Grüne LED) und leitet die MIDI-Events direkt in die C++ Engine weiter. Alternativ kannst du das virtuelle Keyboard nutzen.
+              <strong>MIDI & QWERTY:</strong> Schließe ein USB-MIDI-Keyboard an oder nutze einfach deine normale <strong>Computertastatur (A, W, S, E...)</strong> zum Spielen!
+              <br/>
+              <strong>80s Stereo FX:</strong> Klicke auf den FX-Button, um einen fetten Stereo-Chorus und Raumhall zuzuschalten.
             </p>
           </div>
 
@@ -75,7 +77,8 @@ export function Documentation() {
             <h4 className="text-dx7-teal font-bold mb-2 uppercase tracking-wider text-sm">F. Ghost Mode & Oszilloskop</h4>
             <p className="text-slate-400 text-sm leading-relaxed text-xs">
               • <strong>Ghost Mode:</strong> Die KI spielt automatisch Ambient-Noten und mutiert den Patch kontinuierlich im Hintergrund (Ambient Drift).<br/>
-              • <strong>Oszilloskop:</strong> Beobachte die FM-Wellenform in Echtzeit im unteren linken Panel.
+              • <strong>Oszilloskop & LCD:</strong> Beobachte die FM-Wellenform in Echtzeit im unteren linken Panel und lies Patch-Namen vom authentischen 16x2 LCD-Display ab.<br/>
+              • <strong>CRT Mode:</strong> Klicke auf den CRT-Button oben rechts für echtes 80er-Jahre Röhrenmonitor-Feeling.
             </p>
           </div>
         </div>
