@@ -437,7 +437,7 @@ Kombiniere die besten Eigenschaften beider Patches zu einem neuen, genialen Soun
         </div>
         
         <div className="flex flex-col items-end gap-4">
-          <div className="px-4 py-1 bg-dx7-magenta rounded-sm border-2 border-[#cc0066] text-[10px] font-mono-tech uppercase tracking-widest text-white font-bold">v2.1.0 Stable</div>
+          <div className="px-4 py-1 bg-dx7-magenta rounded-sm border-2 border-[#cc0066] text-[10px] font-mono-tech uppercase tracking-widest text-white font-bold">v3.0.0 Stable</div>
           
           <div className="flex gap-2 bg-slate-900 p-1 rounded-md border border-slate-800">
             <button 
