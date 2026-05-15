@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Download, Music, Settings, Cpu, Layers, Info, HelpCircle, X, Dna, Upload, BookOpen, HardDrive, ChevronLeft, ChevronRight, Search, Image as ImageIcon, Mic, Ghost } from 'lucide-react';
+import { Sparkles, Download, Music, Settings, Cpu, Info, HelpCircle, X, Dna, Upload, BookOpen, HardDrive, ChevronLeft, ChevronRight, Search, Image as ImageIcon, Mic, Ghost } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createDefaultPatch, createBankSysex, parseSysex } from './utils/dx7';
 import type { DX7Patch } from './utils/dx7';
@@ -12,7 +12,7 @@ import { Documentation } from './components/Documentation';
 import { Cartridge } from './components/Cartridge';
 import { Oscilloscope } from './components/Oscilloscope';
 import { savePatchToCartridge } from './lib/storage';
-import { initAudio, FMSynthVoice } from './lib/audio';
+import { initHexter, getHexter } from './lib/audio';
 
 const PENTATONIC = [48, 51, 53, 55, 58, 60, 63, 65, 67, 70, 72];
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
@@ -187,23 +187,22 @@ export default function App() {
   useEffect(() => {
     if (!isGhostMode || !patch) return;
 
-    let localCtx: AudioContext | null = null;
-    try {
-      localCtx = initAudio();
-    } catch (e) {}
+
 
     // Arpeggiator
-    const arpInterval = setInterval(() => {
-      if (!localCtx) return;
+    const arpInterval = setInterval(async () => {
       try {
-        if (ghostVoiceRef.current) {
-           ghostVoiceRef.current.stop(localCtx.currentTime + 1.0);
-        }
+        const synth = await initHexter();
         const note = PENTATONIC[Math.floor(Math.random() * PENTATONIC.length)];
         const finalNote = note + (Math.random() > 0.5 ? -12 : 0);
-        const voice = new FMSynthVoice(localCtx, finalNote, patch);
-        voice.start(localCtx.currentTime);
-        ghostVoiceRef.current = voice;
+        
+        if (ghostVoiceRef.current !== null && ghostVoiceRef.current !== undefined) {
+           synth.noteOff(ghostVoiceRef.current);
+        }
+
+        synth.loadPatch(patch);
+        synth.noteOn(finalNote, 80);
+        ghostVoiceRef.current = finalNote;
       } catch (e) {}
     }, 4000);
 
@@ -221,8 +220,9 @@ export default function App() {
     return () => {
       clearInterval(arpInterval);
       clearInterval(driftInterval);
-      if (ghostVoiceRef.current && localCtx) {
-         ghostVoiceRef.current.stop(localCtx.currentTime);
+      if (ghostVoiceRef.current !== null && ghostVoiceRef.current !== undefined) {
+         getHexter()?.noteOff(ghostVoiceRef.current);
+         ghostVoiceRef.current = null;
       }
     };
   }, [isGhostMode, patch]);

@@ -8,6 +8,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <script>
+      window.Module = {
+        locateFile: function(path) {
+          if (path.endsWith('.wasm')) return '/hexter.wasm';
+          return path;
+        }
+      };
+    </script>
+    <script src="/hexter.js"></script>
   </head>
   <body>
     <div id="root"></div>

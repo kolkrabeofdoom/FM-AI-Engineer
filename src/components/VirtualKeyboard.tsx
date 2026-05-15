@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import type { DX7Patch } from '../utils/dx7';
-import { initAudio, FMSynthVoice, getAudioContext } from '../lib/audio';
+import { initHexter } from '../lib/audio';
 
 const KEYS = [
   { note: 48, type: 'white', label: 'C3' },
@@ -33,32 +33,22 @@ const KEYS = [
 export function VirtualKeyboard({ patch }: { patch: DX7Patch | null }) {
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const [midiDevice, setMidiDevice] = useState<string | null>(null);
-  const voicesRef = useRef<Map<number, FMSynthVoice>>(new Map());
+  
 
-  // Cleanup voices on unmount
+  // No cleanup needed for singleton HexterSynth, except maybe allNotesOff, but let's keep it simple
   useEffect(() => {
     return () => {
-      voicesRef.current.forEach(voice => {
-        const ctx = getAudioContext();
-        if (ctx) voice.stop(ctx.currentTime);
-      });
-      voicesRef.current.clear();
+      // Could call synth.allNotesOff() here if we had synchronous access
     };
   }, []);
 
   const handleNoteOn = async (note: number) => {
     if (!patch) return;
     try {
-      const ctx = await initAudio();
-      
-      // Stop existing voice for this note if any
-      if (voicesRef.current.has(note)) {
-        voicesRef.current.get(note)?.stop(ctx.currentTime);
-      }
-
-      const voice = new FMSynthVoice(ctx, note, patch);
-      voice.start(ctx.currentTime);
-      voicesRef.current.set(note, voice);
+      const synth = await initHexter();
+      // Ensure the correct patch is loaded before playing
+      synth.loadPatch(patch);
+      synth.noteOn(note, 100);
       
       setActiveNotes(prev => new Set(prev).add(note));
     } catch (e) {
@@ -66,17 +56,18 @@ export function VirtualKeyboard({ patch }: { patch: DX7Patch | null }) {
     }
   };
 
-  const handleNoteOff = (note: number) => {
-    const ctx = getAudioContext();
-    if (ctx && voicesRef.current.has(note)) {
-      voicesRef.current.get(note)?.stop(ctx.currentTime);
-      voicesRef.current.delete(note);
-    }
+  const handleNoteOff = async (note: number) => {
+    try {
+      const synth = await initHexter();
+      synth.noteOff(note);
     setActiveNotes(prev => {
       const next = new Set(prev);
       next.delete(note);
       return next;
     });
+    } catch (e) {
+      console.error("Audio playback failed", e);
+    }
   };
 
   useEffect(() => {
@@ -144,7 +135,7 @@ export function VirtualKeyboard({ patch }: { patch: DX7Patch | null }) {
               MIDI: {midiDevice}
             </span>
           ) : (
-            <span className="px-2 py-1 bg-slate-800 rounded-sm text-[8px] text-slate-500">2-OP WebAudio Synth</span>
+            <span className="px-2 py-1 bg-slate-800 rounded-sm text-[8px] text-slate-500">6-OP WASM ENGINE</span>
           )}
         </h3>
         <div className="flex items-center gap-2">
