@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Download, Music, Settings, Cpu, Info, HelpCircle, X, Dna, Upload, BookOpen, HardDrive, ChevronLeft, ChevronRight, Search, Image as ImageIcon, Mic, Ghost, Monitor } from 'lucide-react';
+import { Sparkles, Download, Music, Settings, Cpu, Info, HelpCircle, X, Dna, Upload, BookOpen, HardDrive, ChevronLeft, ChevronRight, Search, Image as ImageIcon, Mic, Ghost, Monitor, Dices } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createDefaultPatch, createBankSysex, parseSysex } from './utils/dx7';
 import type { DX7Patch } from './utils/dx7';
@@ -16,6 +16,17 @@ import { initHexter, getHexter } from './lib/audio';
 
 const PENTATONIC = [48, 51, 53, 55, 58, 60, 63, 65, 67, 70, 72];
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
+
+const SURPRISE_PROMPTS = [
+  "Ein kristallklares 80s E-Piano, das in einer feuchten Höhle gespielt wird, mit ganz leichtem Chorus.",
+  "Ein aggressiver, metallischer Cyberpunk-Bass, der wie ein aufheulender Motorradauspuff klingt.",
+  "Eine warme, fließende Blade Runner Pad-Fläche, die sich langsam aufbaut und endlos ausklingt.",
+  "Kalter, digitaler FM-Glockensound, sehr perkussiv, gläsern und unheimlich.",
+  "Knarziger Lo-Fi Synth-Brass, leicht verstimmt, als käme er von einer alten kaputten VHS-Kassette.",
+  "Fette, mehrschichtige Orgel wie aus einer riesigen gotischen Kathedrale, voluminös und dunkel.",
+  "Eine extrem schnelle, pluckige FM-Sequenz, die sich perfekt für einen Trance-Arpeggiator eignet.",
+  "Sanfte, ätherische Chor-Stimmen, die wie Geister durch den Raum schweben.",
+];
 
 const HELP_TEXTS: Record<string, { title: string; desc: string }> = {
   brightness: {
@@ -503,9 +514,18 @@ Kombiniere die besten Eigenschaften beider Patches zu einem neuen, genialen Soun
               <Sparkles size={120} />
             </div>
             
-            <h2 className="text-xs font-mono-tech font-bold uppercase tracking-[0.2em] text-dx7-teal mb-6 flex items-center gap-2">
-              <Sparkles size={14} /> Sound-Spezifikation
-            </h2>
+            <div className="flex justify-between items-center mb-6 relative z-10">
+              <h2 className="text-xs font-mono-tech font-bold uppercase tracking-[0.2em] text-dx7-teal flex items-center gap-2">
+                <Sparkles size={14} /> Sound-Spezifikation
+              </h2>
+              <button 
+                onClick={() => setPrompt(SURPRISE_PROMPTS[Math.floor(Math.random() * SURPRISE_PROMPTS.length)])}
+                className="flex items-center gap-2 text-[10px] font-mono-tech uppercase tracking-widest text-dx7-magenta hover:text-white transition-colors border border-dx7-magenta/30 hover:bg-dx7-magenta/20 px-3 py-1.5 rounded-sm"
+                title="Zufälligen Prompt generieren"
+              >
+                <Dices size={14} /> Surprise Me
+              </button>
+            </div>
             
             <textarea
               value={prompt}
