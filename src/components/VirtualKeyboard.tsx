@@ -124,6 +124,44 @@ export function VirtualKeyboard({ patch }: { patch: DX7Patch | null }) {
     };
   }, [patch]);
 
+  // QWERTY Keyboard Support
+  useEffect(() => {
+    const KEYMAP: Record<string, number> = {
+      // Lower octave
+      'z': 48, 'x': 50, 'c': 52, 'v': 53, 'b': 55, 'n': 57, 'm': 59, ',': 60, '.': 62,
+      's': 49, 'd': 51, 'g': 54, 'h': 56, 'j': 58, 'l': 61,
+      // Upper octave
+      'q': 60, 'w': 62, 'e': 64, 'r': 65, 't': 67, 'y': 69, 'u': 71, 'i': 72, 'o': 74, 'p': 76,
+      '2': 61, '3': 63, '5': 66, '6': 68, '7': 70, '9': 73, '0': 75,
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      // Don't trigger if user is typing in an input or textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const note = KEYMAP[e.key.toLowerCase()];
+      if (note !== undefined) {
+        handleNoteOn(note);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const note = KEYMAP[e.key.toLowerCase()];
+      if (note !== undefined) {
+        handleNoteOff(note);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [patch]);
+
   return (
     <div className="bg-dx7-panel p-6 rounded-sm border-b-4 border-[#151310] relative select-none shadow-xl mt-8">
       <div className="flex justify-between items-center mb-6">
