@@ -699,8 +699,18 @@ Kombiniere die besten Eigenschaften beider Patches zu einem neuen, genialen Soun
                   <div className="flex justify-between items-start mb-8">
                     <div className="flex-1 mr-4">
                       <h3 className="text-[10px] font-mono-tech uppercase tracking-widest text-dx7-teal mb-2">Patch Name</h3>
-                      <div className="text-3xl font-lcd tracking-widest text-dx7-lcd-text bg-dx7-lcd-bg p-4 rounded-sm shadow-inner uppercase border-4 border-slate-800 overflow-hidden text-ellipsis whitespace-nowrap">
-                        {patch.name || "INIT VOICE"}
+                      <div className="font-lcd tracking-[0.2em] text-[#90EE90] bg-[#1a2f23] p-4 rounded-sm shadow-[inset_0_5px_15px_rgba(0,0,0,0.8)] uppercase border-4 border-[#0d1a12] flex flex-col relative overflow-hidden">
+                        {/* LCD Grid/Scanline Overlay */}
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0)_50%,rgba(0,0,0,0.1)_50%)] bg-[length:100%_4px] pointer-events-none"></div>
+                        
+                        <div className="relative z-10 flex justify-between w-full text-2xl md:text-3xl mb-1 text-shadow-glow">
+                          <span className="whitespace-pre">{">" + (patch.name || "INIT VOICE").substring(0, 10).padEnd(10, " ")}</span>
+                          <span className="opacity-70 whitespace-pre">{" "}</span>
+                        </div>
+                        <div className="relative z-10 flex justify-between w-full text-2xl md:text-3xl opacity-80 text-shadow-glow">
+                          <span className="whitespace-pre">{" ALG:" + patch.algorithm.toString().padStart(2, "0")}</span>
+                          <span className="whitespace-pre">{"F:" + patch.feedback}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-2">
