@@ -14,8 +14,10 @@ export function Documentation() {
           <BookOpen size={32} /> FM-AI-Engineer Handbuch
         </h2>
         <p className="text-slate-300 text-lg leading-relaxed font-sans">
-          Willkommen beim <strong className="text-dx7-magenta">FM-AI-Engineer</strong>, dem weltweit ersten KI-gestützten Patch-Designer für die legendäre Yamaha DX7 Architektur. 
-          Dieses Tool übersetzt natürliche Sprache mithilfe von Google Gemini direkt in komplexe FM-Synthese-Parameter (.syx Dateien).
+          Willkommen beim <strong className="text-dx7-magenta">FM-AI-Engineer v3.0</strong>, dem weltweit ersten KI-gestützten Patch-Designer für die legendäre Yamaha DX7 Architektur. 
+          Dieses Tool übersetzt natürliche Sprache, Audio und Bilder mithilfe von Google Gemini direkt in komplexe FM-Synthese-Parameter (.syx Dateien).
+          <br/><br/>
+          Mit dem neuen <strong>v3.0 Update</strong> verfügt die App nun über eine native <strong>6-Operator WebAssembly Engine (Hexter)</strong>, die den Sound 1:1 wie die Hardware im Browser simuliert!
         </p>
       </div>
 
@@ -46,11 +48,11 @@ export function Documentation() {
           </div>
 
           <div className="bg-dx7-bg border-2 border-slate-800 p-6 rounded-sm hover:border-[#00ffff]/30 transition-colors">
-            <h4 className="text-[#00ffff] font-bold mb-2 uppercase tracking-wider text-sm">C. Vorhören & MIDI (Flavor Preview)</h4>
+            <h4 className="text-[#00ffff] font-bold mb-2 uppercase tracking-wider text-sm">C. 6-OP WASM Engine & MIDI</h4>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Die eingebaute WebAudio-Engine generiert einen vereinfachten 2-Operator-FM-Sound, der die Hüllkurve und Helligkeit imitiert.
+              Die App nutzt nun einen echten in C++ geschriebenen DX7 Emulator (Hexter), der via WebAssembly nativ im Browser läuft. Alle 32 Algorithmen, Feedbacks und Hüllkurven werden zu 100% hardware-akkurat berechnet!
               <br/><br/>
-              <strong>MIDI-Support:</strong> Schließe ein USB-MIDI-Keyboard an! Die App erkennt es sofort (Grüne LED) und du kannst die generierten Sounds inkl. Anschlagdynamik direkt spielen. Alternativ kannst du auf das virtuelle Keyboard klicken.
+              <strong>MIDI-Support:</strong> Schließe ein USB-MIDI-Keyboard an! Die App erkennt es sofort (Grüne LED) und leitet die MIDI-Events direkt in die C++ Engine weiter. Alternativ kannst du das virtuelle Keyboard nutzen.
             </p>
           </div>
 
