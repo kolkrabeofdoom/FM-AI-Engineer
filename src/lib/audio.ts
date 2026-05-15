@@ -22,6 +22,12 @@ export const initHexter = async () => {
 
 export const getHexter = () => globalHexter;
 
+export const toggleHexterFX = (enabled: boolean) => {
+  if (globalHexter) {
+    globalHexter.toggle80sFX(enabled);
+  }
+};
+
 export const initAudio = () => {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();

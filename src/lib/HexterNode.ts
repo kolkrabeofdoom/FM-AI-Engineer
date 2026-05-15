@@ -9,12 +9,88 @@ export class HexterSynth {
   private sampleContainer: any = null;
   private moduleInstance: any = null;
   private isReady = false;
-  private masterGain: GainNode;
+  private dryGain: GainNode;
+  private wetGain: GainNode;
+  
+  // FX Nodes
+  private splitter: ChannelSplitterNode;
+  private merger: ChannelMergerNode;
+  private delayL: DelayNode;
+  private delayR: DelayNode;
+  private lfo: OscillatorNode;
+  private lfoGainL: GainNode;
+  private lfoGainR: GainNode;
+  private convolver: ConvolverNode;
 
   constructor(ctx: AudioContext) {
     this.ctx = ctx;
     this.masterGain = ctx.createGain();
     this.masterGain.gain.value = 2.5; // Healthy safe level
+
+    // Dry/Wet Setup
+    this.dryGain = ctx.createGain();
+    this.wetGain = ctx.createGain();
+    this.dryGain.gain.value = 1.0;
+    this.wetGain.gain.value = 0.0;
+    this.dryGain.connect(this.masterGain);
+    this.wetGain.connect(this.masterGain);
+
+    // --- 80s STEREO CHORUS ---
+    this.splitter = ctx.createChannelSplitter(2);
+    this.merger = ctx.createChannelMerger(2);
+    
+    this.delayL = ctx.createDelay();
+    this.delayR = ctx.createDelay();
+    this.delayL.delayTime.value = 0.02; // 20ms base delay
+    this.delayR.delayTime.value = 0.022; // 22ms base delay (slight offset)
+    
+    this.lfo = ctx.createOscillator();
+    this.lfo.type = 'sine';
+    this.lfo.frequency.value = 0.6; // 0.6Hz sweep
+    
+    this.lfoGainL = ctx.createGain();
+    this.lfoGainR = ctx.createGain();
+    this.lfoGainL.gain.value = 0.002; // 2ms depth
+    this.lfoGainR.gain.value = -0.002; // inverted phase for ultra-wide stereo
+    
+    this.lfo.connect(this.lfoGainL);
+    this.lfo.connect(this.lfoGainR);
+    this.lfoGainL.connect(this.delayL.delayTime);
+    this.lfoGainR.connect(this.delayR.delayTime);
+    this.lfo.start();
+
+    // The single mono channel from WASM connects to both L and R of the splitter
+    this.splitter.connect(this.delayL, 0);
+    this.splitter.connect(this.delayR, 0); // Both read from the same mono input
+    
+    this.delayL.connect(this.merger, 0, 0);
+    this.delayR.connect(this.merger, 0, 1);
+
+    // --- REVERB ---
+    this.convolver = ctx.createConvolver();
+    // Generate synthetic impulse response (2.5s tail)
+    const length = ctx.sampleRate * 2.5;
+    const impulse = ctx.createBuffer(2, length, ctx.sampleRate);
+    for (let i = 0; i < length; i++) {
+      const decay = Math.exp(-i / (ctx.sampleRate * 0.4)); 
+      impulse.getChannelData(0)[i] = (Math.random() * 2 - 1) * decay;
+      impulse.getChannelData(1)[i] = (Math.random() * 2 - 1) * decay;
+    }
+    this.convolver.buffer = impulse;
+
+    // Chain: Splitter -> Delay -> Merger -> Convolver -> WetGain
+    this.merger.connect(this.convolver);
+    this.convolver.connect(this.wetGain);
+  }
+
+  toggle80sFX(enabled: boolean) {
+    if (enabled) {
+      this.dryGain.gain.setTargetAtTime(0.7, this.ctx.currentTime, 0.1);
+      this.wetGain.gain.setTargetAtTime(0.5, this.ctx.currentTime, 0.1);
+    } else {
+      this.dryGain.gain.setTargetAtTime(1.0, this.ctx.currentTime, 0.1);
+      this.wetGain.gain.setTargetAtTime(0.0, this.ctx.currentTime, 0.1);
+    }
   }
 
   async init() {
@@ -46,7 +122,8 @@ export class HexterSynth {
             this.eventContainer.clear();
           };
 
-          this.processor.connect(this.masterGain);
+          this.processor.connect(this.dryGain);
+          this.processor.connect(this.splitter);
           this.isReady = true;
           resolve();
         };

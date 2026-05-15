@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { DX7Patch } from '../utils/dx7';
-import { initHexter } from '../lib/audio';
+import { initHexter, toggleHexterFX } from '../lib/audio';
 
 const KEYS = [
   { note: 48, type: 'white', label: 'C3' },
@@ -33,6 +33,11 @@ const KEYS = [
 export function VirtualKeyboard({ patch }: { patch: DX7Patch | null }) {
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const [midiDevice, setMidiDevice] = useState<string | null>(null);
+  const [fxEnabled, setFxEnabled] = useState(false);
+
+  useEffect(() => {
+    toggleHexterFX(fxEnabled);
+  }, [fxEnabled]);
   
 
   // No cleanup needed for singleton HexterSynth, except maybe allNotesOff, but let's keep it simple
@@ -176,13 +181,23 @@ export function VirtualKeyboard({ patch }: { patch: DX7Patch | null }) {
             <span className="px-2 py-1 bg-slate-800 rounded-sm text-[8px] text-slate-500">6-OP WASM ENGINE</span>
           )}
         </h3>
-        <div className="flex items-center gap-2">
-           {activeNotes.size > 0 ? (
-             <span className="w-2 h-2 rounded-full bg-dx7-teal shadow-[0_0_8px_#00ffff] animate-pulse" />
-           ) : (
-             <span className="w-2 h-2 rounded-full bg-slate-700" />
-           )}
-           <span className="text-[10px] font-mono-tech text-slate-500 uppercase">Engine Ready</span>
+        <div className="flex items-center gap-4">
+           <button 
+             onClick={() => setFxEnabled(!fxEnabled)}
+             className={`text-[10px] font-mono-tech uppercase tracking-widest px-2 py-1 rounded-sm border transition-colors ${fxEnabled ? 'bg-dx7-magenta/20 border-dx7-magenta text-dx7-magenta shadow-[0_0_8px_#ff0088]' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-300'}`}
+             title="Stereo Chorus & Reverb"
+           >
+             80s FX {fxEnabled ? 'ON' : 'OFF'}
+           </button>
+
+           <div className="flex items-center gap-2">
+             {activeNotes.size > 0 ? (
+               <span className="w-2 h-2 rounded-full bg-dx7-teal shadow-[0_0_8px_#00ffff] animate-pulse" />
+             ) : (
+               <span className="w-2 h-2 rounded-full bg-slate-700" />
+             )}
+             <span className="text-[10px] font-mono-tech text-slate-500 uppercase">Engine Ready</span>
+           </div>
         </div>
       </div>
       
